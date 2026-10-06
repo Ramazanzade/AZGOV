@@ -14,12 +14,14 @@ import { fetchDatasetByUrl } from '../services/api';
 import { FetchedDataset, DatasetSummary } from '../types/dataset';
 import TableRenderer from '../components/renderers/TableRenderer';
 import MapRenderer from '../components/renderers/MapRenderer';
+import MultiSeriesLineChart from '../components/renderers/MultiSeriesLineChart';
 import { niceName } from '../utils/columnLabels';
+import { buildMultiSeries } from '../utils/chartHelpers';
+
 const COLORS = ['#22d3ee', '#a855f7', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e'];
 
 // ---------- Encoding bərpası ----------
-// Yalnız hərflər arasındakı "?" → "ə" (cümlə sonundakı sual işarələrinə toxunmur).
-// Kobud variant istəsəniz: s.replace(/\?/g, 'ə')
+// Yalnız hərflər arasındakı "?" → "ə" (cümlə sonundakı sual işarələrinə toxunmur)
 const fixText = (s: string) => s.replace(/(?<=\p{L})\?(?=\p{L})/gu, 'ə');
 
 // ---------- Sütun tanıma ----------
@@ -49,7 +51,7 @@ const detectColumns = (data: any[]) => {
         return;
       }
 
-      // Rəqəm pattern — DİQQƏT: boş string olmamalıdır!
+      // Rəqəm pattern
       const cleaned = raw.replace(/\s/g, '').replace(/,/g, '.');
       const n = Number(cleaned);
       if (!isNaN(n) && isFinite(n) && cleaned !== '' && /^[-+]?\d*\.?\d+$/.test(cleaned)) {
@@ -70,6 +72,7 @@ const detectColumns = (data: any[]) => {
 
   return { keys, numeric, categorical, dates };
 };
+
 const computeStats = (data: any[], numericKey?: string) => {
   if (!numericKey) return null;
   const nums = data
@@ -144,7 +147,7 @@ const DatasetDetailPage = () => {
     const timeKey = cols.dates[0];
     const stats = computeStats(rows, numericKey);
 
-    // Line chart
+    // Line chart (fallback — tək xətt)
     let lineData: any[] = [];
     if (timeKey && numericKey) {
       const m = new Map<string, number>();
@@ -174,24 +177,19 @@ const DatasetDetailPage = () => {
         .slice(0, 10);
     }
 
+    // Multi-series hazırla
+    const multiSeries =
+      timeKey && categoryKey && numericKey && categoryKey !== timeKey
+        ? buildMultiSeries(rows, timeKey, categoryKey, numericKey)
+        : null;
+
     return {
       cols, numericKey, categoryKey, timeKey, stats,
       lineData, barData, pieData: barData.slice(0, 6),
-      totalRows: rows.length
+      totalRows: rows.length,
+      multiSeries
     };
   }, [fixedData]);
-const COLUMN_LABELS: Record<string, string> = {
-  TIME_PERIOD: 'Dövr',
-  OBS_VALUE: 'Dəyər',
-  INDICATOR: 'Göstərici',
-  UNIT_MEASURE: 'Ölçü vahidi',
-  DATASET_TITLE: 'Dataset',
-  Stansiya: 'Stansiya',
-  Giriş: 'Giriş',
-  Say: 'Say',
-};
-
-const niceName = (key?: string) => (key ? COLUMN_LABELS[key] || key : '');
 
   if (!dataset) {
     return (
@@ -257,47 +255,68 @@ const niceName = (key?: string) => (key ? COLUMN_LABELS[key] || key : '');
         {!loading && !error && analysis && (
           <>
             {/* Stat cards */}
-            {/* Stat cards */}
-<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-  <StatCard
-    icon={Database}
-    label="Ümumi qeyd sayı"
-    hint="Dataset-dəki cəmi sətir sayı"
-    value={fmtNum(analysis.totalRows) + ' sətir'}
-    color="cyan"
-  />
-  {analysis.stats && (
-    <>
-      <StatCard
-        icon={Hash}
-        label={`Cəm — ${niceName(analysis.numericKey)}`}
-        hint={`Bütün "${niceName(analysis.numericKey)}" dəyərlərinin cəmi`}
-        value={fmtNum(analysis.stats.sum)}
-        color="purple"
-      />
-      <StatCard
-        icon={Activity}
-        label={`Orta — ${niceName(analysis.numericKey)}`}
-        hint={`Bütün "${niceName(analysis.numericKey)}" dəyərlərinin arifmetik ortası`}
-        value={fmtNum(analysis.stats.avg)}
-        color="pink"
-      />
-      <StatCard
-        icon={TrendingUp}
-        label={`Ən yüksək — ${niceName(analysis.numericKey)}`}
-        hint={`"${niceName(analysis.numericKey)}" üzrə ən böyük dəyər`}
-        value={fmtNum(analysis.stats.max)}
-        color="blue"
-      />
-    </>
-  )}
-</div>
-            {/* Line chart */}
-            {analysis.lineData.length > 1 && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+              <StatCard
+                icon={Database}
+                label="Ümumi qeyd sayı"
+                hint="Dataset-dəki cəmi sətir sayı"
+                value={fmtNum(analysis.totalRows) + ' sətir'}
+                color="cyan"
+              />
+              {analysis.stats && (
+                <>
+                  <StatCard
+                    icon={Hash}
+                    label={`Cəm — ${niceName(analysis.numericKey)}`}
+                    hint={`Bütün "${niceName(analysis.numericKey)}" dəyərlərinin cəmi`}
+                    value={fmtNum(analysis.stats.sum)}
+                    color="purple"
+                  />
+                  <StatCard
+                    icon={Activity}
+                    label={`Orta — ${niceName(analysis.numericKey)}`}
+                    hint={`Bütün "${niceName(analysis.numericKey)}" dəyərlərinin arifmetik ortası`}
+                    value={fmtNum(analysis.stats.avg)}
+                    color="pink"
+                  />
+                  <StatCard
+                    icon={TrendingUp}
+                    label={`Ən yüksək — ${niceName(analysis.numericKey)}`}
+                    hint={`"${niceName(analysis.numericKey)}" üzrə ən böyük dəyər`}
+                    value={fmtNum(analysis.stats.max)}
+                    color="blue"
+                  />
+                </>
+              )}
+            </div>
+
+            {/* Multi-series line chart (prioritet) */}
+            {analysis.multiSeries && analysis.multiSeries.series.length > 1 && (
+              <div className="rounded-xl bg-bg-card border border-border p-4 mb-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp size={14} className="text-accent-cyan" />
+                    <h3 className="text-sm font-semibold">
+                      {niceName(analysis.timeKey)} üzrə dinamika
+                      {analysis.categoryKey && ` — ${niceName(analysis.categoryKey)} üzrə`}
+                    </h3>
+                  </div>
+                  <span className="text-[10px] text-gray-500">
+                    {analysis.multiSeries.series.length} seriya
+                  </span>
+                </div>
+                <MultiSeriesLineChart result={analysis.multiSeries} />
+              </div>
+            )}
+
+            {/* Fallback — tək xətt (multi-series mümkün deyilsə) */}
+            {!analysis.multiSeries && analysis.lineData.length > 1 && (
               <div className="rounded-xl bg-bg-card border border-border p-4 mb-5">
                 <div className="flex items-center gap-2 mb-3">
                   <TrendingUp size={14} className="text-accent-cyan" />
-                  <h3 className="text-sm font-semibold">Zaman üzrə dinamika —{niceName(analysis.numericKey)}</h3>
+                  <h3 className="text-sm font-semibold">
+                    Zaman üzrə dinamika — {niceName(analysis.numericKey)}
+                  </h3>
                 </div>
                 <div className="h-72">
                   <ResponsiveContainer>
@@ -339,7 +358,7 @@ const niceName = (key?: string) => (key ? COLUMN_LABELS[key] || key : '');
                 <div className={`rounded-xl bg-bg-card border border-border p-4 ${analysis.pieData.length > 1 ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
                   <div className="flex items-center gap-2 mb-3">
                     <BarChart3 size={14} className="text-accent-pink" />
-                    <h3 className="text-sm font-semibold">Top 10 — {analysis.categoryKey}</h3>
+                    <h3 className="text-sm font-semibold">Top 10 — {niceName(analysis.categoryKey)}</h3>
                   </div>
                   <div className="h-72">
                     <ResponsiveContainer>
@@ -397,9 +416,9 @@ const niceName = (key?: string) => (key ? COLUMN_LABELS[key] || key : '');
         <InfoRow label="Təşkilat" value={dataset.organization} />
         <InfoRow label="Format" value={dataset.format} />
         {data && <InfoRow label="Qeyd sayı" value={String(data.meta.totalRecords)} />}
-        {analysis?.timeKey && <InfoRow label="Zaman sütunu" value={analysis.timeKey} />}
-        {analysis?.numericKey && <InfoRow label="Rəqəmsal sütun" value={analysis.numericKey} />}
-        {analysis?.categoryKey && <InfoRow label="Kateqoriya sütunu" value={analysis.categoryKey} />}
+        {analysis?.timeKey && <InfoRow label="Zaman sütunu" value={niceName(analysis.timeKey)} />}
+        {analysis?.numericKey && <InfoRow label="Rəqəmsal sütun" value={niceName(analysis.numericKey)} />}
+        {analysis?.categoryKey && <InfoRow label="Kateqoriya sütunu" value={niceName(analysis.categoryKey)} />}
 
         <div className="mt-6 space-y-2">
           {dataset.resourceUrl && (
@@ -422,7 +441,7 @@ const niceName = (key?: string) => (key ? COLUMN_LABELS[key] || key : '');
 interface StatCardProps {
   icon: any;
   label: string;
-  hint?: string;        // ← YENİ: hover izahı
+  hint?: string;
   value: string;
   color: 'cyan' | 'purple' | 'pink' | 'blue';
 }
