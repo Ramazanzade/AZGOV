@@ -1,10 +1,13 @@
 import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
+import { useLang } from '../../i18n/LanguageContext';
 
 interface Props { data: any }
 
 const MapRenderer = ({ data }: Props) => {
+      const { t } = useLang();  
+
   if (!data || !data.features) {
-    return <div className="text-gray-500 text-sm p-4">GeoJSON data yoxdur</div>;
+    return <div className="text-gray-500 text-sm p-4">{t('home.geo')}</div>;
   }
 
   return (

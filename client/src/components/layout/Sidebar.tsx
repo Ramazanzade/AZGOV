@@ -3,8 +3,10 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronRight, Home, Search, X } from 'lucide-react';
 import { navigation, NavItem } from '../../data/navigation';
 import { useStats } from '../../hooks/useStats';
+import { useLang } from '../../i18n/LanguageContext';
 
 const Sidebar = () => {
+  const { t } = useLang();          // ✅ Hook is now inside the component
   const location = useLocation();
   const stats = useStats();
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
@@ -39,28 +41,25 @@ const Sidebar = () => {
       .map(section => {
         const items = section.items
           .map(item => {
-            // Alt-elmlləri filtrlə
             if (item.children) {
-              const matchingChildren = item.children.filter(
-                c =>
-                  c.label.toLowerCase().includes(q) ||
+              const matchingChildren = item.children.filter(c => {
+                const label = t(c.labelKey);
+                return (
+                  label.toLowerCase().includes(q) ||
                   (c.path && c.path.toLowerCase().includes(q))
-              );
-              if (matchingChildren.length > 0) {
-                return { ...item, children: matchingChildren };
-              }
-              // Alt-elm yoxdursa, əsas başlıq uyğundursa hamısını göstər
-              if (item.label.toLowerCase().includes(q)) return item;
+                );
+              });
+              if (matchingChildren.length > 0) return { ...item, children: matchingChildren };
+              if (t(item.labelKey).toLowerCase().includes(q)) return item;
               return null;
             }
-            return item.label.toLowerCase().includes(q) ? item : null;
+            return t(item.labelKey).toLowerCase().includes(q) ? item : null;
           })
           .filter((x): x is NavItem => x !== null);
-
         return { ...section, items };
       })
       .filter(section => section.items.length > 0);
-  }, [query]);
+  }, [query, t]);
 
   // Axtarış aktivdirsə bütün kateqoriyaları aç
   useEffect(() => {
@@ -81,7 +80,7 @@ const Sidebar = () => {
       demographic: ['population', 'labor', 'education', 'health', 'crime'],
       economy: ['economy'],
       environment: ['environment'],
-      geo: ['geo', 'map']
+      geo: ['geo', 'map'],
     };
     const groups = map[id] || [];
     return groups.reduce((sum, g) => sum + (stats.byGroup[g] || 0), 0);
@@ -91,7 +90,7 @@ const Sidebar = () => {
 
   return (
     <aside className="w-64 bg-bg-secondary border-r border-border flex flex-col">
-  <NavLink
+      <NavLink
         to="/"
         className="h-16 flex items-center px-5 border-b border-border flex-shrink-0 hover:bg-bg-hover transition-colors"
       >
@@ -115,7 +114,7 @@ const Sidebar = () => {
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Naviqasiyada axtar..."
+            placeholder={t('search.placeholder')}
             className="w-full bg-bg-primary border border-border rounded-lg pl-8 pr-8 py-1.5 text-xs text-gray-300 placeholder-gray-500 focus:outline-none focus:border-accent-cyan/50"
           />
           {query && (
@@ -133,15 +132,15 @@ const Sidebar = () => {
       <nav className="flex-1 overflow-y-auto px-3 pb-4 space-y-4">
         {!hasResults && (
           <div className="text-center text-[11px] text-gray-500 py-8">
-            Nəticə tapılmadı
+            {t('nav.noResults')}
           </div>
         )}
 
         {filteredNavigation.map(section => (
           <div key={section.id}>
-            {section.title && (
+            {section.titleKey && (
               <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold px-3 mb-2">
-                {section.title}
+                {t(section.titleKey)}
               </div>
             )}
 
@@ -155,6 +154,7 @@ const Sidebar = () => {
                   currentPath={location.pathname}
                   count={getCount(item.id)}
                   highlight={query.trim()}
+                  t={t}                   
                 />
               ))}
             </div>
@@ -166,7 +166,7 @@ const Sidebar = () => {
 };
 
 // ---------- Alt komponentlər ----------
-
+type TFunction = ReturnType<typeof useLang>['t'];
 interface NavItemRendererProps {
   item: NavItem;
   isOpen: boolean;
@@ -175,6 +175,7 @@ interface NavItemRendererProps {
   depth?: number;
   count?: number;
   highlight?: string;
+t: TFunction;
 }
 
 const HighlightText = ({ text, query }: { text: string; query?: string }) => {
@@ -193,7 +194,14 @@ const HighlightText = ({ text, query }: { text: string; query?: string }) => {
 };
 
 const NavItemRenderer = ({
-  item, isOpen, onToggle, currentPath, depth = 0, count, highlight
+  item,
+  isOpen,
+  onToggle,
+  currentPath,
+  depth = 0,
+  count,
+  highlight,
+  t,                                // ← t-ni destructure edirik
 }: NavItemRendererProps) => {
   const Icon = item.icon;
 
@@ -215,7 +223,7 @@ const NavItemRenderer = ({
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             {Icon && <Icon size={16} className="flex-shrink-0" />}
             <span className="truncate text-left text-[13px]">
-              <HighlightText text={item.label} query={highlight} />
+              <HighlightText text={t(item.labelKey)} query={highlight} />
             </span>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -246,6 +254,7 @@ const NavItemRenderer = ({
                 currentPath={currentPath}
                 depth={depth + 1}
                 highlight={highlight}
+                t={t}                     // ← uşaqlara da ötürürük
               />
             ))}
           </div>
@@ -267,7 +276,7 @@ const NavItemRenderer = ({
     >
       {Icon && <Icon size={16} className="flex-shrink-0" />}
       <span className="truncate text-[13px]">
-        <HighlightText text={item.label} query={highlight} />
+        <HighlightText text={t(item.labelKey)} query={highlight} />
       </span>
     </NavLink>
   );

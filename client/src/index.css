@@ -8,11 +8,51 @@
   box-sizing: border-box;
 }
 
+/* ============ DARK (default) ============ */
+:root,
+[data-theme='dark'] {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #111827;
+  --bg-card: #1a1f35;
+  --bg-hover: #232942;
+  --border: #2a3050;
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --accent-cyan: #22d3ee;
+  --accent-purple: #a855f7;
+  --accent-pink: #ec4899;
+  --accent-blue: #3b82f6;
+  --scroll-track: #111827;
+  --scroll-thumb: #2a3050;
+  --scroll-thumb-hover: #3a4060;
+}
+
+/* ============ LIGHT ============ */
+[data-theme='light'] {
+  --bg-primary: #f5f7fb;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-hover: #eef2f9;
+  --border: #dce1eb;
+  --text-primary: #1a1d29;
+  --text-secondary: #5a6470;
+  --text-muted: #8b95a3;
+  --accent-cyan: #0891b2;
+  --accent-purple: #7c3aed;
+  --accent-pink: #db2777;
+  --accent-blue: #2563eb;
+  --scroll-track: #e5e9f0;
+  --scroll-thumb: #c5cdd9;
+  --scroll-thumb-hover: #a3aebd;
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background-color: #0a0e1a;
-  color: #e5e7eb;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   overflow-x: hidden;
+  transition: background-color 0.2s, color 0.2s;
 }
 
 ::-webkit-scrollbar {
@@ -20,12 +60,17 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #111827;
+  background: var(--scroll-track);
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a3050;
+  background: var(--scroll-thumb);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a4060;
+  background: var(--scroll-thumb-hover);
+}
+
+/* Leaflet light theme filter — xəritə parlaq olanda gözəl görünsün */
+[data-theme='light'] .leaflet-tile-pane {
+  filter: brightness(1.05) saturate(0.95);
 }

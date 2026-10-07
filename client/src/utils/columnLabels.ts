@@ -54,3 +54,60 @@ export const niceName = (key?: string): string => {
   // alt xətləri boşluqla əvəz et, ilk hərfi böyük et
   return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 };
+
+// ============================================================
+// QRUPLAR ÜÇÜN TƏRCÜMƏ AÇARLARI
+// ============================================================
+// Bu tip `translations.ts`-dəki TranslationKey ilə eyni olmalıdır.
+// import etməyə ehtiyac yoxdur — string literal olaraq veririk.
+type GroupTranslationKey =
+  | 'cat.economy'
+  | 'cat.population'
+  | 'cat.labor'
+  | 'cat.education'
+  | 'cat.health'
+  | 'cat.environment'
+  | 'cat.geo'
+  | 'cat.transport'
+  | 'cat.metro'
+  | 'cat.tourism'
+  | 'cat.regional'
+  | 'cat.other'
+  | 'cat.crime'
+  | 'cat.sport'
+  | 'cat.culture'
+  | 'cat.industry'
+  | 'cat.agriculture'
+  | 'cat.energy'
+  | 'cat.trade';
+
+// Qrup identifikatorunu tərcümə açarına çevirir
+export const GROUP_KEYS: Record<string, GroupTranslationKey> = {
+  economy: 'cat.economy',
+  population: 'cat.population',
+  labor: 'cat.labor',
+  education: 'cat.education',
+  health: 'cat.health',
+  environment: 'cat.environment',
+  geo: 'cat.geo',
+  transport: 'cat.transport',
+  metro: 'cat.metro',
+  tourism: 'cat.tourism',
+  regional: 'cat.regional',
+  other: 'cat.other',
+  crime: 'cat.crime',
+  sport: 'cat.sport',
+  culture: 'cat.culture',
+  industry: 'cat.industry',
+  agriculture: 'cat.agriculture',
+  energy: 'cat.energy',
+  trade: 'cat.trade',
+};
+
+/**
+ * Qrup identifikatorunu tərcümə açarına çevirir.
+ * Tapılmasa, `group.other` qaytarır.
+ */
+export const groupKey = (id: string): GroupTranslationKey => {
+  return GROUP_KEYS[id] || 'cat.other';
+};

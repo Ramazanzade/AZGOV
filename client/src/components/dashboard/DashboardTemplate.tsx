@@ -161,7 +161,6 @@ const DashboardTemplate = ({ config }: Props) => {
         </div>
       </div>
 
-      <FilterPanel />
     </div>
   );
 };

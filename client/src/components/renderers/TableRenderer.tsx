@@ -1,10 +1,13 @@
 import { niceName } from '../../utils/columnLabels';
+import { useLang } from '../../i18n/LanguageContext';
 
 interface Props { data: any[] }
 
 const TableRenderer = ({ data }: Props) => {
+      const { t } = useLang();   // ← burada, komponentin içində
+
   if (!Array.isArray(data) || data.length === 0) {
-    return <div className="text-gray-500 text-sm p-4">Məlumat yoxdur</div>;
+    return <div className="text-gray-500 text-sm p-4">{t('detail.noData')}</div>;
   }
 
   const columns = Object.keys(data[0]);
@@ -43,7 +46,7 @@ const TableRenderer = ({ data }: Props) => {
       </table>
       {data.length > 200 && (
         <div className="p-2 text-center text-[10px] text-gray-500 bg-bg-primary">
-          İlk 200 sətir göstərilir. Ümumi: {data.length}
+          {t('home.um')} {data.length}
         </div>
       )}
     </div>

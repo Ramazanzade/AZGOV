@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, Download, ExternalLink, Loader2, AlertCircle,
-  Database, TrendingUp, PieChart as PieIcon, BarChart3,
+  Database, TrendingUp, TrendingDown, PieChart as PieIcon, BarChart3,
   MapPin, FileText, Info, Hash, Activity
 } from 'lucide-react';
 import {
@@ -15,20 +15,26 @@ import { FetchedDataset, DatasetSummary } from '../types/dataset';
 import TableRenderer from '../components/renderers/TableRenderer';
 import MapRenderer from '../components/renderers/MapRenderer';
 import MultiSeriesLineChart from '../components/renderers/MultiSeriesLineChart';
+import ExportButtons from '../components/ui/ExportButtons';
 import { niceName } from '../utils/columnLabels';
 import { buildMultiSeries } from '../utils/chartHelpers';
+import { detectGeoPoints } from '../utils/geoHelpers';
+import MarkerMap from '../components/renderers/MarkerMap';
+import { useLang } from '../i18n/LanguageContext';
 
 const COLORS = ['#22d3ee', '#a855f7', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e'];
+
+type AggType = 'sum' | 'avg' | 'max' | 'min' | 'count';
 
 // ---------- Encoding bərpası ----------
 // Yalnız hərflər arasındakı "?" → "ə" (cümlə sonundakı sual işarələrinə toxunmur)
 const fixText = (s: string) => s.replace(/(?<=\p{L})\?(?=\p{L})/gu, 'ə');
+const ID_LIKE_KEYS = /^(s\/n|s_n|sn|no|#|id|index|sıra|sira|nömrə|nomre)$/i;
 
 // ---------- Sütun tanıma ----------
 const detectColumns = (data: any[]) => {
   if (!Array.isArray(data) || data.length === 0) return null;
 
-  // İlk 20 sətri nümunə götür (tək sətir kifayət deyil)
   const sample = data.slice(0, 20);
   const keys = Object.keys(data[0]);
 
@@ -37,6 +43,9 @@ const detectColumns = (data: any[]) => {
   const dates: string[] = [];
 
   keys.forEach(k => {
+    // ID/indeks sütunlarını tamamilə atla
+    if (ID_LIKE_KEYS.test(k.trim())) return;
+
     let numericHits = 0;
     let dateHits = 0;
     let textHits = 0;
@@ -45,16 +54,13 @@ const detectColumns = (data: any[]) => {
       const raw = String(row[k] ?? '').trim();
       if (raw === '') return;
 
-      // Tarix/il pattern
       if (/^\d{4}(-\d{1,2}(-\d{1,2})?)?$/.test(raw)) {
         dateHits++;
         return;
       }
 
-      // Rəqəm pattern
       const cleaned = raw.replace(/\s/g, '').replace(/,/g, '.');
-      const n = Number(cleaned);
-      if (!isNaN(n) && isFinite(n) && cleaned !== '' && /^[-+]?\d*\.?\d+$/.test(cleaned)) {
+      if (/^[-+]?\d*\.?\d+$/.test(cleaned)) {
         numericHits++;
       } else {
         textHits++;
@@ -64,7 +70,6 @@ const detectColumns = (data: any[]) => {
     const total = numericHits + dateHits + textHits;
     if (total === 0) return;
 
-    // Üstünlük: ən çox uyğun gələn tip
     if (dateHits / total > 0.6) dates.push(k);
     else if (numericHits / total > 0.7) numeric.push(k);
     else categorical.push(k);
@@ -76,14 +81,16 @@ const detectColumns = (data: any[]) => {
 const computeStats = (data: any[], numericKey?: string) => {
   if (!numericKey) return null;
   const nums = data
-    .map(r => Number(String(r[numericKey]).replace(/[^\d.-]/g, '')))
+    .map(r => Number(String(r[numericKey] ?? '').replace(/[^\d.-]/g, '')))
     .filter(n => !isNaN(n));
   if (nums.length === 0) return null;
+
   const sum = nums.reduce((a, b) => a + b, 0);
-  return {
-    sum, avg: sum / nums.length,
-    max: Math.max(...nums), min: Math.min(...nums), count: nums.length
-  };
+  const avg = sum / nums.length;
+  const max = Math.max(...nums);
+  const min = Math.min(...nums);
+
+  return { sum, avg, max, min, count: nums.length };
 };
 
 const fmtNum = (n: number) => {
@@ -102,9 +109,12 @@ const DatasetDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [autoFix, setAutoFix] = useState(false);
+  const [aggregation, setAggregation] = useState<AggType>('sum');
+const { t } = useLang();
+
+  const chartRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const stateDataset = (location.state as any)?.dataset as DatasetSummary | undefined;
-
   const dataset = stateDataset || datasets.find(d => d.id === id);
 
   useEffect(() => {
@@ -183,18 +193,24 @@ const DatasetDetailPage = () => {
         ? buildMultiSeries(rows, timeKey, categoryKey, numericKey)
         : null;
 
+    // Lat/lon aşkarlama
+    const geoPoints = detectGeoPoints(rows);
+
     return {
       cols, numericKey, categoryKey, timeKey, stats,
       lineData, barData, pieData: barData.slice(0, 6),
       totalRows: rows.length,
-      multiSeries
+      multiSeries,
+      geoPoints    // ← YENİ
     };
   }, [fixedData]);
 
   if (!dataset) {
     return (
       <div className="p-6 text-gray-400">
-        Dataset tapılmadı. <Link to="/" className="text-accent-cyan">Ana səhifə</Link>
+        {t('detail.notFound')} <Link to="/" className="text-accent-cyan">{t('detail.back')}</Link>
+        <h3>{t('detail.rawData')}</h3>
+
       </div>
     );
   }
@@ -203,16 +219,24 @@ const DatasetDetailPage = () => {
     <div className="flex h-full">
       <div className="flex-1 overflow-y-auto p-6">
         {/* Header */}
-        <div className="mb-6">
-          <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-accent-cyan mb-3">
-            <ArrowLeft size={12} /> Geri
-          </Link>
-          <h1 className="text-xl font-bold text-gray-100 mb-2">{dataset.title}</h1>
-          <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-500">
-            <span>{dataset.organization}</span>
-            <span className="px-2 py-0.5 rounded bg-bg-card border border-border">{dataset.format}</span>
-            {data && <span>• {data.meta.totalRecords} sətir</span>}
+        <div className="flex items-start justify-between mb-6 gap-4">
+          <div>
+            <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-accent-cyan mb-3">
+              <ArrowLeft size={12} /> {t('detail.back')}
+            </Link>
+            <h1 className="text-xl font-bold text-gray-100 mb-2">{dataset.title}</h1>
+            <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-500">
+              <span>{dataset.organization}</span>
+              <span className="px-2 py-0.5 rounded bg-bg-card border border-border">{dataset.format}</span>
+              {data && <span>• {data.meta.totalRecords} {t('detail.rows')}</span>}
+            </div>
           </div>
+          {/* Export buttons */}
+          <ExportButtons
+            title={dataset.title}
+            data={Array.isArray(fixedData?.data) ? fixedData.data : undefined}
+            chartRef={chartRef}
+          />
         </div>
 
         {/* Encoding xəbərdarlığı */}
@@ -220,10 +244,9 @@ const DatasetDetailPage = () => {
           <div className="mb-4 flex items-start gap-3 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm">
             <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <div className="font-medium">Encoding problemi aşkarlandı</div>
+              <div className="font-medium">{t('detail.encodingWarning1')}</div>
               <div className="text-xs mt-1 text-yellow-300/80">
-                Bu dataset-də {data.meta.corruptionCount} yerdə hərf itirilib (mənbə faylı xarabdır).
-                Avtomatik bərpa cəhdi edə bilərik, amma nəticə 100% dəqiq olmaya bilər.
+                 {t('detail.encodingWarning2')} {data.meta.corruptionCount} 
               </div>
               <button
                 onClick={() => setAutoFix(v => !v)}
@@ -238,7 +261,7 @@ const DatasetDetailPage = () => {
         {loading && (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 size={28} className="text-accent-cyan animate-spin" />
-            <span className="text-sm text-gray-400">Data yüklənir...</span>
+            <span className="text-sm text-gray-400">{t('detail.loading')}</span>
           </div>
         )}
 
@@ -246,7 +269,7 @@ const DatasetDetailPage = () => {
           <div className="flex items-start gap-3 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
             <AlertCircle size={18} />
             <div>
-              <div className="font-medium">Xəta</div>
+              <div className="font-medium">{t('detail.error')}</div>
               <div className="text-xs mt-1">{error}</div>
             </div>
           </div>
@@ -254,50 +277,83 @@ const DatasetDetailPage = () => {
 
         {!loading && !error && analysis && (
           <>
-            {/* Stat cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-              <StatCard
-                icon={Database}
-                label="Ümumi qeyd sayı"
-                hint="Dataset-dəki cəmi sətir sayı"
-                value={fmtNum(analysis.totalRows) + ' sətir'}
-                color="cyan"
-              />
-              {analysis.stats && (
-                <>
-                  <StatCard
-                    icon={Hash}
-                    label={`Cəm — ${niceName(analysis.numericKey)}`}
-                    hint={`Bütün "${niceName(analysis.numericKey)}" dəyərlərinin cəmi`}
-                    value={fmtNum(analysis.stats.sum)}
-                    color="purple"
-                  />
-                  <StatCard
-                    icon={Activity}
-                    label={`Orta — ${niceName(analysis.numericKey)}`}
-                    hint={`Bütün "${niceName(analysis.numericKey)}" dəyərlərinin arifmetik ortası`}
-                    value={fmtNum(analysis.stats.avg)}
-                    color="pink"
-                  />
-                  <StatCard
-                    icon={TrendingUp}
-                    label={`Ən yüksək — ${niceName(analysis.numericKey)}`}
-                    hint={`"${niceName(analysis.numericKey)}" üzrə ən böyük dəyər`}
-                    value={fmtNum(analysis.stats.max)}
-                    color="blue"
-                  />
-                </>
-              )}
-            </div>
+            {/* Stat cards & Aggregation controls */}
+          {analysis.stats && (
+  <div className="rounded-xl bg-bg-card border border-border p-4 mb-5">
+    <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+      <div className="flex items-center gap-2">
+        <Activity size={14} className="text-accent-cyan" />
+        <span className="text-sm font-semibold">
+          {niceName(analysis.numericKey)} — {t('detail.stats')}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-1 bg-bg-primary border border-border rounded-lg p-1">
+        {(['sum', 'avg', 'max', 'min', 'count'] as AggType[]).map(agg => (
+          <button
+            key={agg}
+            onClick={() => setAggregation(agg)}
+            className={`px-3 py-1 rounded-md text-[11px] font-medium transition ${
+              aggregation === agg
+                ? 'bg-accent-cyan/15 text-accent-cyan'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            {agg === 'sum'   ? t('detail.sum')   :
+             agg === 'avg'   ? t('detail.avg')   :
+             agg === 'max'   ? t('detail.max')   :
+             agg === 'min'   ? t('detail.min')   :
+                               t('detail.count')}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <StatCard
+        icon={Hash}
+        label={t('detail.sum')}
+        hint={`${t('detail.hintSum')} — "${niceName(analysis.numericKey)}"`}
+        value={fmtNum(analysis.stats.sum)}
+        color="purple"
+        highlight={aggregation === 'sum'}
+      />
+      <StatCard
+        icon={Activity}
+        label={t('detail.avg')}
+        hint={`${t('detail.hintAvg')} — "${niceName(analysis.numericKey)}"`}
+        value={fmtNum(analysis.stats.avg)}
+        color="cyan"
+        highlight={aggregation === 'avg'}
+      />
+      <StatCard
+        icon={TrendingUp}
+        label={t('detail.max')}
+        hint={`${t('detail.hintMax')} — "${niceName(analysis.numericKey)}"`}
+        value={fmtNum(analysis.stats.max)}
+        color="pink"
+        highlight={aggregation === 'max'}
+      />
+      <StatCard
+        icon={TrendingDown}
+        label={t('detail.min')}
+        hint={`${t('detail.hintMin')} — "${niceName(analysis.numericKey)}"`}
+        value={fmtNum(analysis.stats.min)}
+        color="blue"
+        highlight={aggregation === 'min'}
+      />
+    </div>
+  </div>
+)}
 
             {/* Multi-series line chart (prioritet) */}
             {analysis.multiSeries && analysis.multiSeries.series.length > 1 && (
-              <div className="rounded-xl bg-bg-card border border-border p-4 mb-5">
+              <div ref={chartRef} className="rounded-xl bg-bg-card border border-border p-4 mb-5">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <TrendingUp size={14} className="text-accent-cyan" />
                     <h3 className="text-sm font-semibold">
-                      {niceName(analysis.timeKey)} üzrə dinamika
+                      {niceName(analysis.timeKey)} {t('detail.periodDynamics1')}
                       {analysis.categoryKey && ` — ${niceName(analysis.categoryKey)} üzrə`}
                     </h3>
                   </div>
@@ -311,11 +367,11 @@ const DatasetDetailPage = () => {
 
             {/* Fallback — tək xətt (multi-series mümkün deyilsə) */}
             {!analysis.multiSeries && analysis.lineData.length > 1 && (
-              <div className="rounded-xl bg-bg-card border border-border p-4 mb-5">
+              <div ref={chartRef} className="rounded-xl bg-bg-card border border-border p-4 mb-5">
                 <div className="flex items-center gap-2 mb-3">
                   <TrendingUp size={14} className="text-accent-cyan" />
                   <h3 className="text-sm font-semibold">
-                    Zaman üzrə dinamika — {niceName(analysis.numericKey)}
+                    {t('detail.periodDynamics')} — {niceName(analysis.numericKey)}
                   </h3>
                 </div>
                 <div className="h-72">
@@ -338,7 +394,7 @@ const DatasetDetailPage = () => {
                 <div className="rounded-xl bg-bg-card border border-border p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <PieIcon size={14} className="text-accent-purple" />
-                    <h3 className="text-sm font-semibold">Bölgü — {niceName(analysis.categoryKey)}</h3>
+                    <h3 className="text-sm font-semibold">{t('detail.distribution')} — {niceName(analysis.categoryKey)}</h3>
                   </div>
                   <div className="h-72">
                     <ResponsiveContainer>
@@ -353,12 +409,11 @@ const DatasetDetailPage = () => {
                   </div>
                 </div>
               )}
-
               {analysis.barData.length > 1 && (
                 <div className={`rounded-xl bg-bg-card border border-border p-4 ${analysis.pieData.length > 1 ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
                   <div className="flex items-center gap-2 mb-3">
                     <BarChart3 size={14} className="text-accent-pink" />
-                    <h3 className="text-sm font-semibold">Top 10 — {niceName(analysis.categoryKey)}</h3>
+                    <h3 className="text-sm font-semibold">{t('detail.top10')} — {niceName(analysis.categoryKey)}</h3>
                   </div>
                   <div className="h-72">
                     <ResponsiveContainer>
@@ -375,12 +430,30 @@ const DatasetDetailPage = () => {
               )}
             </div>
 
+            {/* Lat/Lon marker xəritəsi */}
+            {analysis.geoPoints && analysis.geoPoints.points.length > 0 && (
+              <div className="rounded-xl bg-bg-card border border-border p-4 mb-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <MapPin size={14} className="text-accent-cyan" />
+                    <h3 className="text-sm font-semibold">
+                      {t('detail.map')} — {analysis.geoPoints.points.length}
+                    </h3>
+                  </div>
+                  <span className="text-[10px] text-gray-500">
+                    {t('detail.columns')}: {analysis.geoPoints.latKey} / {analysis.geoPoints.lonKey}
+                  </span>
+                </div>
+                <MarkerMap detection={analysis.geoPoints} />
+              </div>
+            )}
+
             {/* GeoJSON map */}
             {fixedData?.meta.isGeoJSON && (
               <div className="rounded-xl bg-bg-card border border-border p-4 mb-5">
                 <div className="flex items-center gap-2 mb-3">
                   <MapPin size={14} className="text-accent-cyan" />
-                  <h3 className="text-sm font-semibold">Xəritə</h3>
+                  <h3 className="text-sm font-semibold">{t('detail.map')}</h3>
                 </div>
                 <MapRenderer data={fixedData.data} />
               </div>
@@ -390,7 +463,7 @@ const DatasetDetailPage = () => {
             <div className="rounded-xl bg-bg-card border border-border overflow-hidden">
               <div className="p-4 border-b border-border flex items-center gap-2">
                 <FileText size={14} className="text-gray-500" />
-                <h3 className="text-sm font-semibold">Xam data</h3>
+                <h3 className="text-sm font-semibold">{t('detail.rawData')}</h3>
               </div>
               <div className="p-4">
                 <TableRenderer data={fixedData?.data ?? []} />
@@ -409,27 +482,25 @@ const DatasetDetailPage = () => {
       {/* Sağ info panel */}
       <aside className="w-72 bg-bg-secondary border-l border-border p-4 overflow-y-auto hidden lg:block">
         <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
-          <Info size={14} className="text-gray-400" /> Məlumat
+          <Info size={14} className="text-gray-400" />  {t('info.title')}
         </h3>
-
-        <InfoRow label="Ad" value={dataset.title} />
-        <InfoRow label="Təşkilat" value={dataset.organization} />
-        <InfoRow label="Format" value={dataset.format} />
-        {data && <InfoRow label="Qeyd sayı" value={String(data.meta.totalRecords)} />}
-        {analysis?.timeKey && <InfoRow label="Zaman sütunu" value={niceName(analysis.timeKey)} />}
-        {analysis?.numericKey && <InfoRow label="Rəqəmsal sütun" value={niceName(analysis.numericKey)} />}
-        {analysis?.categoryKey && <InfoRow label="Kateqoriya sütunu" value={niceName(analysis.categoryKey)} />}
-
+       <InfoRow label={t('info.name')} value={dataset.title} />
+<InfoRow label={t('info.organization')} value={dataset.organization} />
+<InfoRow label={t('info.format')} value={dataset.format} />
+{data && <InfoRow label={t('info.recordCount')} value={String(data.meta.totalRecords)} />}
+{analysis?.timeKey && <InfoRow label={t('info.timeColumn')} value={analysis.timeKey} />}
+{analysis?.numericKey && <InfoRow label={t('info.numericColumn')} value={analysis.numericKey} />}
+{analysis?.categoryKey && <InfoRow label={t('info.categoryColumn')} value={analysis.categoryKey} />}
         <div className="mt-6 space-y-2">
           {dataset.resourceUrl && (
             <a href={dataset.resourceUrl} target="_blank" rel="noreferrer"
               className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-accent-cyan/10 border border-accent-cyan/30 text-accent-cyan text-xs font-medium hover:bg-accent-cyan/20">
-              <Download size={12} /> Faylı yüklə
+              <Download size={12} />  {t('info.download')}
             </a>
           )}
           <a href={dataset.metadataUrl} target="_blank" rel="noreferrer"
             className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-bg-card border border-border text-gray-400 hover:text-accent-cyan text-xs font-medium">
-            <ExternalLink size={12} /> API metadata
+            <ExternalLink size={12} /> {t('info.apiMetadata')}
           </a>
         </div>
       </aside>
@@ -444,6 +515,7 @@ interface StatCardProps {
   hint?: string;
   value: string;
   color: 'cyan' | 'purple' | 'pink' | 'blue';
+  highlight?: boolean;
 }
 
 const colorMap = {
@@ -453,11 +525,13 @@ const colorMap = {
   blue:   'from-accent-blue/20 to-accent-blue/5 text-accent-blue border-accent-blue/30'
 };
 
-const StatCard = ({ icon: Icon, label, hint, value, color }: StatCardProps) => {
+const StatCard = ({ icon: Icon, label, hint, value, color, highlight }: StatCardProps) => {
   const c = colorMap[color].split(' ');
   return (
     <div
-      className={`rounded-xl bg-gradient-to-br ${c[0]} ${c[1]} border ${c[2]} p-4 group relative cursor-help`}
+      className={`rounded-xl bg-gradient-to-br ${c[0]} ${c[1]} border ${c[2]} p-4 group relative cursor-help transition-all ${
+        highlight ? 'ring-2 ring-accent-cyan/40 scale-[1.02]' : ''
+      }`}
       title={hint}
     >
       <div className={`w-8 h-8 rounded-lg bg-bg-primary/50 flex items-center justify-center ${c[3]} mb-2`}>
@@ -469,8 +543,6 @@ const StatCard = ({ icon: Icon, label, hint, value, color }: StatCardProps) => {
       <div className={`mt-1 text-lg font-bold ${c[3]} truncate`}>
         {value}
       </div>
-
-      {/* Hover tooltip */}
       {hint && (
         <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-1.5 rounded-lg bg-bg-primary border border-border text-[10px] text-gray-300 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-lg">
           {hint}

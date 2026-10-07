@@ -8,19 +8,19 @@ export default {
     extend: {
       colors: {
         bg: {
-          primary: '#0a0e1a',
-          secondary: '#111827',
-          card: '#1a1f35',
-          hover: '#232942'
+          primary: 'var(--bg-primary)',
+          secondary: 'var(--bg-secondary)',
+          card: 'var(--bg-card)',
+          hover: 'var(--bg-hover)'
         },
         accent: {
-          cyan: '#22d3ee',
-          purple: '#a855f7',
-          pink: '#ec4899',
-          blue: '#3b82f6'
+          cyan: 'var(--accent-cyan)',
+          purple: 'var(--accent-purple)',
+          pink: 'var(--accent-pink)',
+          blue: 'var(--accent-blue)'
         },
         border: {
-          DEFAULT: '#2a3050'
+          DEFAULT: 'var(--border)'
         }
       }
     },

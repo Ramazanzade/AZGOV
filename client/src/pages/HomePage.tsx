@@ -6,6 +6,7 @@ import {
   Sparkles, Code2
 } from 'lucide-react';
 import { useDatasets } from '../hooks/useDatasets';
+import { useLang } from '../i18n/LanguageContext';
 
 const CATEGORY_ICONS: Record<string, any> = {
   economy: TrendingUp,
@@ -24,18 +25,25 @@ const CATEGORY_ICONS: Record<string, any> = {
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-  economy: 'İqtisadi statistika',
-  population: 'Əhali',
-  labor: 'Əmək bazarı',
-  education: 'Təhsil',
-  health: 'Səhiyyə',
-  environment: 'Ətraf mühit',
-  geo: 'Coğrafi məlumatlar',
-  transport: 'Nəqliyyat',
-  metro: 'Metropoliten',
-  tourism: 'Turizm',
-  regional: 'Regional',
-  other: 'Digər'
+ economy: 'cat.economy',
+  population: 'cat.population',
+  labor: 'cat.labor',
+  education: 'cat.education',
+  health: 'cat.health',
+  environment: 'cat.environment',
+  geo: 'cat.geo',
+  transport: 'cat.transport',
+  metro: 'cat.metro',
+  tourism: 'cat.tourism',
+  regional: 'cat.regional',
+  other: 'cat.other',
+  crime: 'cat.crime',
+  sport: 'cat.sport',
+  culture: 'cat.culture',
+  industry: 'cat.industry',
+  agriculture: 'cat.agriculture',
+  energy: 'cat.energy',
+  trade: 'cat.trade',
 };
 
 const CATEGORY_PATHS: Record<string, string> = {
@@ -55,6 +63,7 @@ const CATEGORY_PATHS: Record<string, string> = {
 
 const HomePage = () => {
   const { datasets, loading } = useDatasets();
+const { t } = useLang();
 
   // Statistika hesablanır
   const stats = useMemo(() => {
@@ -89,12 +98,12 @@ const HomePage = () => {
       {/* Hero */}
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">
-          <h1 className="text-3xl font-bold">OpenData.az</h1>
+         <h1>{t('home.title')}</h1>
+<p>{t('home.subtitle')}</p>
           <Sparkles size={24} className="text-accent-cyan" />
         </div>
         <p className="text-sm text-gray-400 max-w-2xl">
-          Azərbaycan Respublikasının açıq məlumatlar portalı üzrə statistik
-          göstəricilər, datasetlər və interaktiv vizuallaşdırmalar
+          {t('common.datasets1')}
         </p>
       </div>
 
@@ -102,29 +111,29 @@ const HomePage = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatBox
           icon={Database}
-          label="Ümumi dataset"
+          label={t('home.totalDatasets')}
           value={loading ? '...' : stats.total.toLocaleString('az')}
           color="cyan"
         />
         <StatBox
           icon={FileText}
-          label="Format növləri"
+          label={t('home.formatTypes')}
           value={loading ? '...' : Object.keys(stats.formats).length}
           color="purple"
         />
         <StatBox
           icon={Users}
-          label="Təşkilatlar"
+          label={t('home.organizations')}
           value={loading ? '...' : stats.orgCount}
           color="pink"
         />
         <StatBox
           icon={TrendingUp}
-          label="Ən böyük kateqoriya"
+          label={t('home.biggestCategory')}
           value={
             loading || topCategories.length === 0
               ? '...'
-              : CATEGORY_LABELS[topCategories[0].key] || topCategories[0].key
+              :  t(CATEGORY_LABELS[topCategories[0].key] as any) || topCategories[0].key
           }
           color="blue"
           small
@@ -133,7 +142,7 @@ const HomePage = () => {
 
       {/* Kateqoriyalar grid */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold mb-4">Məlumat kateqoriyaları</h2>
+        <h2 className="text-lg font-semibold mb-4">{t('home.categoriesTitle')}</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {topCategories.map(({ key, count }) => {
             const Icon = CATEGORY_ICONS[key] || Database;
@@ -154,7 +163,7 @@ const HomePage = () => {
                   />
                 </div>
                 <div className="text-sm font-semibold text-gray-100 mb-1">
-                  {CATEGORY_LABELS[key] || key}
+  {t(CATEGORY_LABELS[key] as any) || key}
                 </div>
                 <div className="text-[11px] text-gray-500">
                   {count} dataset
@@ -169,7 +178,7 @@ const HomePage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Formatlar */}
         <div className="rounded-xl bg-bg-card border border-border p-5">
-          <h3 className="text-sm font-semibold mb-4">Formatlara görə bölgü</h3>
+          <h3 className="text-sm font-semibold mb-4">{t('home.byFormat')}</h3>
           <div className="space-y-3">
             {Object.entries(stats.formats)
               .sort((a, b) => b[1] - a[1])
@@ -200,11 +209,10 @@ const HomePage = () => {
         <div className="rounded-xl bg-gradient-to-br from-accent-purple/10 to-accent-cyan/10 border border-accent-cyan/20 p-5 flex flex-col">
           <div className="flex items-center gap-2 mb-3">
             <Code2 size={18} className="text-accent-cyan" />
-            <h3 className="text-sm font-semibold">Developer Portal</h3>
+            <h3 className="text-sm font-semibold">{t('nav.developer')}</h3>
           </div>
           <p className="text-xs text-gray-400 mb-4 flex-1">
-            API-lər, SDK-lar və inteqrasiya sənədləri. Bütün datasetlər JSON,
-            CSV və GeoJSON formatlarında açıq şəkildə əlçatandır.
+           {t('common.datasets2')}
           </p>
           <Link
             to="/developer"

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useDatasets } from '../../hooks/useDatasets';
 import { niceName } from '../../utils/columnLabels';
+import { useLang } from '../../i18n/LanguageContext';
 
 interface Props {
   open: boolean;
@@ -28,6 +29,7 @@ const SearchModal = ({ open, onClose }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const { datasets } = useDatasets();
+const { t } = useLang();
 
   // Açılanda input focus
   useEffect(() => {
@@ -123,7 +125,7 @@ const SearchModal = ({ open, onClose }: Props) => {
             ref={inputRef}
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Dataset, təşkilat və ya kateqoriya axtar..."
+            placeholder={t('search.placeholder')}
             className="flex-1 bg-transparent text-sm text-gray-200 placeholder-gray-500 focus:outline-none"
           />
           {query ? (
@@ -141,7 +143,7 @@ const SearchModal = ({ open, onClose }: Props) => {
         <div className="max-h-[60vh] overflow-y-auto">
           {!query && (
             <div className="px-4 py-8 text-center text-xs text-gray-500">
-              Yazmağa başla — canlı nəticə görünəcək
+             {t('search.startTyping')}
             </div>
           )}
 

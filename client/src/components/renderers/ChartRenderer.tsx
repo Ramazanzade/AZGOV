@@ -3,6 +3,7 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import { useLang } from '../../i18n/LanguageContext';
 
 interface Props { data: any[] }
 
@@ -11,6 +12,7 @@ type ChartType = 'line' | 'bar' | 'pie';
 const COLORS = ['#22d3ee', '#a855f7', '#ec4899', '#3b82f6', '#10b981', '#f59e0b'];
 
 const ChartRenderer = ({ data }: Props) => {
+  const { t } = useLang();   // ← burada, komponentin içində
   const [chartType, setChartType] = useState<ChartType>('bar');
 
   // Analiz: numeric və categorical sütunları tapırıq
@@ -33,13 +35,11 @@ const ChartRenderer = ({ data }: Props) => {
       }
     });
 
-    // Pie üçün: 1 label + 1 numeric
-    // Line/Bar üçün: 1 label + 1+ numeric
     return { keys, numericKeys, labelKeys };
   }, [data]);
 
   if (!analysis) {
-    return <div className="text-gray-500 text-sm p-4">Data yoxdur</div>;
+    return <div className="text-gray-500 text-sm p-4">{t('home.data')}</div>;
   }
 
   const { numericKeys, labelKeys } = analysis;
@@ -47,10 +47,9 @@ const ChartRenderer = ({ data }: Props) => {
   const valueKey = numericKeys[0];
 
   if (!valueKey) {
-    return <div className="text-gray-500 text-sm p-4">Rəqəmsal sütun tapılmadı</div>;
+    return <div className="text-gray-500 text-sm p-4">{t('home.digital')}</div>;
   }
 
-  // Yalnız 10 sətir göstər (qrafik üçün)
   const chartData = data.slice(0, 20).map(row => ({
     ...row,
     [labelKey]: String(row[labelKey] || '—').slice(0, 20),
@@ -61,17 +60,17 @@ const ChartRenderer = ({ data }: Props) => {
     <div>
       {/* Chart tipi seçimi */}
       <div className="flex items-center gap-1 mb-4 bg-bg-primary border border-border rounded-lg p-1 w-fit">
-        {(['line', 'bar', 'pie'] as ChartType[]).map(t => (
+        {(['line', 'bar', 'pie'] as ChartType[]).map(type => (
           <button
-            key={t}
-            onClick={() => setChartType(t)}
+            key={type}
+            onClick={() => setChartType(type)}
             className={`px-3 py-1 rounded-md text-xs font-medium transition ${
-              chartType === t
+              chartType === type
                 ? 'bg-accent-cyan/15 text-accent-cyan'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            {t === 'line' ? '📈 Line' : t === 'bar' ? '📊 Bar' : '🥧 Pie'}
+            {type === 'line' ? t('chart.line') : type === 'bar' ? t('chart.bar') : t('chart.pie')}
           </button>
         ))}
       </div>
