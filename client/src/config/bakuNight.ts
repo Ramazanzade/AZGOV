@@ -16,7 +16,7 @@ export const BAKU_NIGHT_STATS: BakuNightCard[] = [
     valueKey: 'Giriş',
     labelKey: 'Stansiya',
     color: 'cyan',
-    metadataUrl: 'https://admin.opendata.az/api/3/action/package_show?id=stansiyalar-uzre-gundelik-sernisin-gedislerinin-sayi'
+    metadataUrl: 'https://admin.datahub.az/api/3/action/package_show?id=stansiyalar-uzre-gundelik-sernisin-gedislerinin-sayi'
   },
   {
     id: 'metro-payment',
@@ -25,7 +25,7 @@ export const BAKU_NIGHT_STATS: BakuNightCard[] = [
     valueKey: 'Say',
     labelKey: 'Ödəniş növü',
     color: 'purple',
-    metadataUrl: 'https://admin.opendata.az/api/3/action/package_show?id=baki-metro-stansiyalarinda-gundelik-turniket-kecidlerinin-odenis-novleri-uzre-bolgusu'
+    metadataUrl: 'https://admin.datahub.az/api/3/action/package_show?id=baki-metro-stansiyalarinda-gundelik-turniket-kecidlerinin-odenis-novleri-uzre-bolgusu'
   },
   {
     id: 'economy',
@@ -34,16 +34,16 @@ export const BAKU_NIGHT_STATS: BakuNightCard[] = [
     valueKey: 'Manat',
     labelKey: 'Sahə',
     color: 'pink',
-    metadataUrl: 'https://admin.opendata.az/api/3/action/package_show?id=i-qtisadiyyatin-saheleri-uzre-orta-ayliq-nominal-emekhaqqi-manat'
+    metadataUrl: 'https://admin.datahub.az/api/3/action/package_show?id=i-qtisadiyyatin-saheleri-uzre-orta-ayliq-nominal-emekhaqqi-manat'
   }
 ];
 
 export const BAKU_NIGHT_MAP = {
-  metadataUrl: 'https://admin.opendata.az/api/3/action/package_show?id=metro-cixislari-uzre-koordinatlar'
+  metadataUrl: 'https://admin.datahub.az/api/3/action/package_show?id=metro-cixislari-uzre-koordinatlar'
 };
 
 export const BAKU_NIGHT_CHARTS = {
-  line: 'https://admin.opendata.az/api/3/action/package_show?id=stansiyalar-uzre-gundelik-sernisin-gedislerinin-sayi',
-  pie: 'https://admin.opendata.az/api/3/action/package_show?id=baki-metro-stansiyalarinda-gundelik-turniket-kecidlerinin-odenis-novleri-uzre-bolgusu',
-  bar: 'https://admin.opendata.az/api/3/action/package_show?id=i-qtisadiyyatin-saheleri-uzre-orta-ayliq-nominal-emekhaqqi-manat'
+  line: 'https://admin.datahub.az/api/3/action/package_show?id=stansiyalar-uzre-gundelik-sernisin-gedislerinin-sayi',
+  pie: 'https://admin.datahub.az/api/3/action/package_show?id=baki-metro-stansiyalarinda-gundelik-turniket-kecidlerinin-odenis-novleri-uzre-bolgusu',
+  bar: 'https://admin.datahub.az/api/3/action/package_show?id=i-qtisadiyyatin-saheleri-uzre-orta-ayliq-nominal-emekhaqqi-manat'
 };

@@ -99,7 +99,7 @@ const Sidebar = () => {
             <Home size={18} className="text-white" />
           </div>
           <span className="text-lg font-bold">
-            OpenData<span className="text-accent-cyan">.az</span>
+            DataHub<span className="text-accent-cyan">.az</span>
           </span>
         </div>
       </NavLink>

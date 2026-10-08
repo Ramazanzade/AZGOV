@@ -51,7 +51,7 @@ export const TRANSLATIONS = {
     'topbar.themeLight': 'İşıqlı rejim',
 
     // Ana Səhifə
-    'home.title': 'OpenData.az',
+    'home.title': 'DataHub.az',
     'home.subtitle': 'Azərbaycan Respublikasının açıq məlumatlar portalı üzrə statistik göstəricilər, datasetlər və interaktiv vizuallaşdırmalar',
     'home.totalDatasets': 'Ümumi dataset',
     'home.formatTypes': 'Format növləri',
@@ -224,7 +224,7 @@ export const TRANSLATIONS = {
     'topbar.themeDark': 'Тёмная тема',
     'topbar.themeLight': 'Светлая тема',
 
-    'home.title': 'OpenData.az',
+    'home.title': 'DataHub.az',
     'home.subtitle': 'Статистические показатели, наборы данных и интерактивные визуализации портала открытых данных Азербайджанской Республики',
     'home.totalDatasets': 'Всего наборов',
     'home.formatTypes': 'Типы форматов',
@@ -381,7 +381,7 @@ export const TRANSLATIONS = {
     'topbar.themeDark': 'Dark theme',
     'topbar.themeLight': 'Light theme',
 
-    'home.title': 'OpenData.az',
+    'home.title': 'DataHub.az',
     'home.subtitle': 'Statistical indicators, datasets and interactive visualizations from the Open Data Portal of the Republic of Azerbaijan',
     'home.totalDatasets': 'Total datasets',
     'home.formatTypes': 'Format types',

@@ -43,7 +43,7 @@ export const BAKU_NIGHT: DashboardConfig = {
       subtitle: 'Gündəlik giriş',
       valueKey: 'Giriş',
       color: 'cyan',
-      metadataUrl: 'https://admin.opendata.az/api/3/action/package_show?id=stansiyalar-uzre-gundelik-sernisin-gedislerinin-sayi'
+      metadataUrl: 'https://admin.datahub.az/api/3/action/package_show?id=stansiyalar-uzre-gundelik-sernisin-gedislerinin-sayi'
     },
     {
       id: 'metro-payment',
@@ -51,7 +51,7 @@ export const BAKU_NIGHT: DashboardConfig = {
       subtitle: 'Ödəniş növləri üzrə',
       valueKey: 'Say',
       color: 'purple',
-      metadataUrl: 'https://admin.opendata.az/api/3/action/package_show?id=baki-metro-stansiyalarinda-gundelik-turniket-kecidlerinin-odenis-novleri-uzre-bolgusu'
+      metadataUrl: 'https://admin.datahub.az/api/3/action/package_show?id=baki-metro-stansiyalarinda-gundelik-turniket-kecidlerinin-odenis-novleri-uzre-bolgusu'
     },
     {
       id: 'economy',
@@ -59,34 +59,34 @@ export const BAKU_NIGHT: DashboardConfig = {
       subtitle: 'Sahələr üzrə',
       valueKey: 'Manat',
       color: 'pink',
-      metadataUrl: 'https://admin.opendata.az/api/3/action/package_show?id=i-qtisadiyyatin-saheleri-uzre-orta-ayliq-nominal-emekhaqqi-manat'
+      metadataUrl: 'https://admin.datahub.az/api/3/action/package_show?id=i-qtisadiyyatin-saheleri-uzre-orta-ayliq-nominal-emekhaqqi-manat'
     },
     {
       id: 'stats',
       title: 'Statistika',
       subtitle: 'Ümumi dataset',
       color: 'blue',
-      metadataUrl: 'https://admin.opendata.az/api/3/action/package_show?id=esas-fondlarin-istifadəyə-verilməsi'
+      metadataUrl: 'https://admin.datahub.az/api/3/action/package_show?id=esas-fondlarin-istifadəyə-verilməsi'
     }
   ],
   charts: [
     {
       id: 'dynamics',
       title: 'Dinamika',
-      metadataUrl: 'https://admin.opendata.az/api/3/action/package_show?id=stansiyalar-uzre-gundelik-sernisin-gedislerinin-sayi',
+      metadataUrl: 'https://admin.datahub.az/api/3/action/package_show?id=stansiyalar-uzre-gundelik-sernisin-gedislerinin-sayi',
       span: 2,
       defaultView: 'chart'
     },
     {
       id: 'share',
       title: 'Sərnişin payı',
-      metadataUrl: 'https://admin.opendata.az/api/3/action/package_show?id=baki-metro-stansiyalarinda-gundelik-turniket-kecidlerinin-odenis-novleri-uzre-bolgusu',
+      metadataUrl: 'https://admin.datahub.az/api/3/action/package_show?id=baki-metro-stansiyalarinda-gundelik-turniket-kecidlerinin-odenis-novleri-uzre-bolgusu',
       defaultView: 'chart'
     }
   ],
   map: {
     title: 'Bakı Metropoliteni xəritəsi',
-    metadataUrl: 'https://admin.opendata.az/api/3/action/package_show?id=metro-cixislari-uzre-koordinatlar'
+    metadataUrl: 'https://admin.datahub.az/api/3/action/package_show?id=metro-cixislari-uzre-koordinatlar'
   }
 };
 
