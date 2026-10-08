@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Download, FileText, FileJson, Image, Loader2, ChevronDown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Download, FileText, FileJson, Image, Loader2, ChevronDown, Lock } from 'lucide-react';
 import { exportCSV, exportJSON, exportPNG, buildFilename } from '../../utils/exporters';
-import { useLang } from '../../i18n/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
 
 interface Props {
   title: string;
@@ -10,9 +11,19 @@ interface Props {
 }
 
 const ExportButtons = ({ title, data, chartRef }: Props) => {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
-const { t } = useLang();
+
+  const handleClick = () => {
+    if (!isAuthenticated) {
+      // Login olmayan → login səhifəsinə
+      navigate('/login', { state: { from: window.location.pathname } });
+      return;
+    }
+    setOpen(v => !v);
+  };
 
   const handle = async (type: 'csv' | 'json' | 'png') => {
     setBusy(type);
@@ -33,34 +44,43 @@ const { t } = useLang();
   return (
     <div className="relative">
       <button
-        onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-bg-card border border-border text-xs text-gray-300 hover:border-accent-cyan/50 hover:text-accent-cyan transition"
+        onClick={handleClick}
+        className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs transition ${
+          isAuthenticated
+            ? 'bg-bg-card border-border text-gray-300 hover:border-accent-cyan/50 hover:text-accent-cyan'
+            : 'bg-bg-card border-border text-gray-500 hover:border-accent-cyan/50'
+        }`}
+        title={!isAuthenticated ? 'Export üçün daxil olun' : 'Export'}
       >
-        <Download size={13} />
+        {isAuthenticated ? <Download size={13} /> : <Lock size={13} />}
         Export
-        <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+        {isAuthenticated && (
+          <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+        )}
       </button>
 
-      {open && (
+      {open && isAuthenticated && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full mt-1 w-48 rounded-lg bg-bg-card border border-border shadow-xl z-50 overflow-hidden">
             <MenuItem
               icon={FileText}
-label={t('export.csv')}
+              label="CSV yüklə"
               busy={busy === 'csv'}
               disabled={!Array.isArray(data)}
               onClick={() => handle('csv')}
             />
             <MenuItem
               icon={FileJson}
-label={t('export.json')}              busy={busy === 'json'}
+              label="JSON yüklə"
+              busy={busy === 'json'}
               disabled={!data}
               onClick={() => handle('json')}
             />
             <MenuItem
               icon={Image}
-label={t('export.png')}              busy={busy === 'png'}
+              label="Chart PNG"
+              busy={busy === 'png'}
               disabled={!chartRef?.current}
               onClick={() => handle('png')}
             />

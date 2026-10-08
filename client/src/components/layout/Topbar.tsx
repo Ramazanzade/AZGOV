@@ -4,6 +4,7 @@ import SearchModal from '../search/SearchModal';
 import { useTheme } from '../../context/ThemeContext';
 import { useLang } from '../../i18n/LanguageContext';
 import { Lang } from '../../i18n/translations';
+import UserMenu from '../auth/UserMenu';
 
 const LANGS: Lang[] = ['az', 'ru', 'en'];
 
@@ -62,8 +63,8 @@ const Topbar = () => {
               </button>
             ))}
           </div>
-
- {/*          <button
+{/* 
+          <button
             onClick={toggle}
             className="p-2 rounded-lg hover:bg-bg-hover text-gray-400 hover:text-white transition-colors"
             title={theme === 'dark' ? t('topbar.themeLight') : t('topbar.themeDark')}
@@ -71,9 +72,11 @@ const Topbar = () => {
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>  */}
 
-          <button className="w-9 h-9 rounded-full bg-bg-primary border border-border flex items-center justify-center text-gray-400 hover:text-white">
+         {/*  <button className="w-9 h-9 rounded-full bg-bg-primary border border-border flex items-center justify-center text-gray-400 hover:text-white">
             <User size={18} />
-          </button>
+          </button> */}
+          <UserMenu />
+
         </div>
       </header>
 
