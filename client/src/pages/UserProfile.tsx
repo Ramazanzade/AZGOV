@@ -67,8 +67,7 @@ const UserProfile = () => {
       const updated = await updateProfile(draft);
       setProfile(updated);
       setDraft(updated);
-            await refresh();                               // ← ƏLAVƏ ET
-
+            await refresh();                    
       setSaveState('success');
       setTimeout(() => setSaveState('idle'), 2500);
     } catch (e: any) {
