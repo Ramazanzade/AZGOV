@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Download, FileText, FileJson, Image, Loader2, ChevronDown, Lock } from 'lucide-react';
 import { exportCSV, exportJSON, exportPNG, buildFilename } from '../../utils/exporters';
 import { useAuth } from '../../context/AuthContext';
+import { useAuthModal } from '../../context/AuthModalContext';
 
 interface Props {
   title: string;
@@ -15,16 +16,15 @@ const ExportButtons = ({ title, data, chartRef }: Props) => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+const { open: openAuthModal } = useAuthModal();
 
   const handleClick = () => {
-    if (!isAuthenticated) {
-      // Login olmayan → login səhifəsinə
-      navigate('/login', { state: { from: window.location.pathname } });
-      return;
-    }
-    setOpen(v => !v);
-  };
-
+  if (!isAuthenticated) {
+    openAuthModal('signin');   // ← modal aç, yönləndirmə YOX
+    return;
+  }
+  setOpen(v => !v);
+};
   const handle = async (type: 'csv' | 'json' | 'png') => {
     setBusy(type);
     try {

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, Download, ExternalLink, Loader2, AlertCircle,
-  Database, TrendingUp, TrendingDown, PieChart as PieIcon, BarChart3,
+  Lock , TrendingUp, TrendingDown, PieChart as PieIcon, BarChart3,
   MapPin, FileText, Info, Hash, Activity
 } from 'lucide-react';
 import {
@@ -21,7 +21,8 @@ import { buildMultiSeries } from '../utils/chartHelpers';
 import { detectGeoPoints } from '../utils/geoHelpers';
 import MarkerMap from '../components/renderers/MarkerMap';
 import { useLang } from '../i18n/LanguageContext';
-
+import { useAuth } from '../context/AuthContext';
+import { useAuthModal } from '../context/AuthModalContext';
 const COLORS = ['#22d3ee', '#a855f7', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e'];
 
 type AggType = 'sum' | 'avg' | 'max' | 'min' | 'count';
@@ -111,7 +112,8 @@ const DatasetDetailPage = () => {
   const [autoFix, setAutoFix] = useState(false);
   const [aggregation, setAggregation] = useState<AggType>('sum');
 const { t } = useLang();
-
+const { isAuthenticated } = useAuth();
+const { open: openAuthModal } = useAuthModal();
   const chartRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const stateDataset = (location.state as any)?.dataset as DatasetSummary | undefined;
@@ -492,12 +494,27 @@ const { t } = useLang();
 {analysis?.numericKey && <InfoRow label={t('info.numericColumn')} value={analysis.numericKey} />}
 {analysis?.categoryKey && <InfoRow label={t('info.categoryColumn')} value={analysis.categoryKey} />}
         <div className="mt-6 space-y-2">
-          {dataset.resourceUrl && (
-            <a href={dataset.resourceUrl} target="_blank" rel="noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-accent-cyan/10 border border-accent-cyan/30 text-accent-cyan text-xs font-medium hover:bg-accent-cyan/20">
-              <Download size={12} />  {t('info.download')}
-            </a>
-          )}
+  {dataset.resourceUrl && (
+  <a
+    href={isAuthenticated ? dataset.resourceUrl : undefined}
+    onClick={(e) => {
+      if (!isAuthenticated) {
+        e.preventDefault();
+        openAuthModal('signin');
+      }
+    }}
+    target={isAuthenticated ? '_blank' : undefined}
+    rel={isAuthenticated ? 'noreferrer' : undefined}
+    className={`flex items-center justify-center gap-2 w-full py-2 rounded-lg border text-xs font-medium transition ${
+      isAuthenticated
+        ? 'bg-accent-cyan/10 border-accent-cyan/30 text-accent-cyan hover:bg-accent-cyan/20 cursor-pointer'
+        : 'bg-bg-card border-border text-gray-500 hover:border-accent-cyan/50 cursor-pointer'
+    }`}
+  >
+    <Download size={12} />
+    {t('info.download')}
+  </a>
+)}
           <a href={dataset.metadataUrl} target="_blank" rel="noreferrer"
             className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-bg-card border border-border text-gray-400 hover:text-accent-cyan text-xs font-medium">
             <ExternalLink size={12} /> {t('info.apiMetadata')}

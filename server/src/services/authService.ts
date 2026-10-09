@@ -1,7 +1,7 @@
 import { eq, and, gt } from 'drizzle-orm';
 import { db } from '../db/client';
 import { users, otpCodes, User, NewUser } from '../db/schema';
-
+import bcrypt from 'bcryptjs';
 // ============================================================
 // USERS
 // ============================================================
@@ -31,7 +31,82 @@ export const createUser = async (data: NewUser): Promise<User> => {
 export const updateLastLogin = async (userId: string): Promise<void> => {
   await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, userId));
 };
+// ============================================================
+// REGISTER STEP 1 — user yarat (email_verified = false)
+// ============================================================
+export const createUnverifiedUser = async (
+  email: string,
+  password: string,
+  name: string
+): Promise<User> => {
+  const existing = await findUserByEmail(email);
 
+  // Əgər artıq təsdiqlənmiş istifadəçidirsə → xəta
+  if (existing && existing.emailVerified) {
+    throw new Error('Bu email artıq qeydiyyatdan keçib');
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  // Əgər köhnə təsdiqlənməmiş istifadəçi varsa → yenilə
+  if (existing && !existing.emailVerified) {
+    const updated = await db.update(users)
+      .set({
+        passwordHash,
+        name,
+        lastLoginAt: new Date()
+      })
+      .where(eq(users.id, existing.id))
+      .returning();
+    return updated[0];
+  }
+
+  // Yeni istifadəçi
+  return createUser({
+    email,
+    name,
+    passwordHash,
+    emailVerified: false,
+    lastLoginAt: new Date()
+  });
+};
+
+// ============================================================
+// MARK VERIFIED — OTP təsdiqindən sonra
+// ============================================================
+export const markEmailVerified = async (userId: string): Promise<User> => {
+  const updated = await db.update(users)
+    .set({ emailVerified: true, lastLoginAt: new Date() })
+    .where(eq(users.id, userId))
+    .returning();
+  return updated[0];
+};
+
+// ============================================================
+// LOGIN — email_verified yoxlaması ilə
+// ============================================================
+export const verifyPassword = async (email: string, password: string): Promise<User> => {
+  const user = await findUserByEmail(email);
+  if (!user) {
+    throw new Error('Email və ya parol yanlışdır');
+  }
+
+  if (!user.passwordHash) {
+    throw new Error('Bu hesab üçün parol təyin edilməyib. Google ilə daxil olun');
+  }
+
+  const ok = await bcrypt.compare(password, user.passwordHash);
+  if (!ok) {
+    throw new Error('Email və ya parol yanlışdır');
+  }
+
+  if (!user.emailVerified) {
+    throw new Error('Email təsdiqlənməyib. Zəhmət olmasa yenidən qeydiyyatdan keçin');
+  }
+
+  await updateLastLogin(user.id);
+  return user;
+};
 // ============================================================
 // OTP
 // ============================================================

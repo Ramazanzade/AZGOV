@@ -9,8 +9,8 @@
     "build": "tsc",
     "convert-excel": "ts-node-dev --transpile-only src/scripts/convertExcel.ts",
     "db:generate": "drizzle-kit generate",
-  "db:push": "tsx node_modules/drizzle-kit/bin.cjs push --config=drizzle.config.ts",
-  "db:migrate": "drizzle-kit migrate"
+    "db:push": "tsx node_modules/drizzle-kit/bin.cjs push --config=drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
@@ -25,6 +25,7 @@
     "express": "^4.21.1",
     "express-rate-limit": "^8.7.1",
     "express-session": "^1.19.0",
+    "google-auth-library": "^11.2.0",
     "iconv-lite": "^0.7.3",
     "jsonwebtoken": "^9.0.3",
     "resend": "^6.32.1",
@@ -32,6 +33,7 @@
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.6",
