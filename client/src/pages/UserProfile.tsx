@@ -9,7 +9,7 @@ import {
 } from '../services/userApi';
 import ProfileHeader from '../components/profile/ProfileHeader';
 import ProfileForm from '../components/profile/ProfileForm';
-
+import { useAuth } from '../context/AuthContext'; 
 type SaveState = 'idle' | 'saving' | 'success' | 'error';
 
 const UserProfile = () => {
@@ -19,6 +19,7 @@ const UserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
+  const { refresh } = useAuth();                     // ← əlavə et
 
   useEffect(() => {
     setLoading(true);
@@ -50,6 +51,8 @@ const UserProfile = () => {
     // həm draft, həm profile yenilə — çünki DB-də artıq dəyişib
     setProfile(prev => (prev ? { ...prev, avatarUrl } : prev));
     setDraft(prev => (prev ? { ...prev, avatarUrl } : prev));
+          await refresh();                               // ← ƏLAVƏ ET
+
     setSaveState('idle');
   } catch (e: any) {
     setError(e.message);
@@ -64,6 +67,8 @@ const UserProfile = () => {
       const updated = await updateProfile(draft);
       setProfile(updated);
       setDraft(updated);
+            await refresh();                               // ← ƏLAVƏ ET
+
       setSaveState('success');
       setTimeout(() => setSaveState('idle'), 2500);
     } catch (e: any) {

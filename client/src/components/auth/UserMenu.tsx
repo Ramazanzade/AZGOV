@@ -12,6 +12,15 @@ const UserMenu = () => {
   const navigate = useNavigate();
   const [openMenu, setOpenMenu] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+const API_BASE = import.meta.env.VITE_API_URL || '';
+const getAvatarSrc = (url?: string) => {
+  if (!url) return null;
+  if (url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:')) {
+    return url;
+  }
+  return `${API_BASE}${url}`;   // nisbi → tam
+};
+const avatarSrc = getAvatarSrc(user?.avatarUrl);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -21,6 +30,7 @@ const UserMenu = () => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  
   // ---------- LOGIN OLMAYAN — user ikonu ----------
   if (!isAuthenticated) {
     return (
@@ -74,13 +84,21 @@ const UserMenu = () => {
         onClick={() => setOpenMenu(v => !v)}
         className="flex items-center gap-2 rounded-lg hover:bg-bg-hover p-1 pr-2 transition"
       >
-        {user?.avatarUrl ? (
-          <img src={user.avatarUrl} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
-        ) : (
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-cyan to-accent-purple flex items-center justify-center text-white text-xs font-semibold">
-            {initials}
-          </div>
-        )}
+     {avatarSrc ? (
+  <img
+    src={avatarSrc}
+    alt={user?.name}
+    className="w-8 h-8 rounded-full object-cover"
+    onError={(e) => {
+      // şəkil yüklənməzsə, initials göstər
+      (e.target as HTMLImageElement).style.display = 'none';
+    }}
+  />
+) : (
+  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-cyan to-accent-purple flex items-center justify-center text-white text-xs font-semibold">
+    {initials}
+  </div>
+)}
         <ChevronDown size={12} className={`text-gray-500 transition ${openMenu ? 'rotate-180' : ''}`} />
       </button>
 

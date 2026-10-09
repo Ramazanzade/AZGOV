@@ -9,6 +9,7 @@ interface AuthCtx {
   setUser: (u: User | null) => void;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
+  
 }
 
 const Ctx = createContext<AuthCtx>({
@@ -18,6 +19,7 @@ const Ctx = createContext<AuthCtx>({
   setUser: () => {},
   logout: async () => {},
   refresh: async () => {}
+  
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -25,9 +27,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const refresh = async () => {
+     try {
     const u = await getMe();
     setUser(u);
-    setLoading(false);
+  } catch {
+    setUser(null);
+  } finally {
+    setLoading(false);      
+  }
   };
 
   useEffect(() => {
