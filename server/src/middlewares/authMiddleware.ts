@@ -22,6 +22,7 @@ export const requireAuth = (req: AuthRequest, res: Response, next: NextFunction)
   next();
 };
 
+
 // Optional auth — token varsa user-i qoy, yoxsa davam et
 export const optionalAuth = (req: AuthRequest, _res: Response, next: NextFunction) => {
   const cookieName = process.env.COOKIE_NAME || 'auth_token';

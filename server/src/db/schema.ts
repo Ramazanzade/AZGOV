@@ -18,15 +18,24 @@ export const users = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     email: varchar('email', { length: 255 }).notNull().unique(),
     name: varchar('name', { length: 255 }),
-    passwordHash: text('password_hash'), 
-        emailVerified: boolean('email_verified').default(false).notNull(), 
+    passwordHash: text('password_hash'),
+    emailVerified: boolean('email_verified').default(false).notNull(),
     avatarUrl: text('avatar_url'),
     googleId: varchar('google_id', { length: 255 }).unique(),
+
+    // ← YENİ SAHƏLƏR
+    phone: varchar('phone', { length: 50 }),
+    organization: varchar('organization', { length: 255 }),
+    position: varchar('position', { length: 255 }),
+    bio: text('bio'),
+    language: varchar('language', { length: 5 }).default('az'),
+
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-    lastLoginAt: timestamp('last_login_at', { withTimezone: true })
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),  // ← YENİ
+    lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   },
   (table) => ({
-    emailIdx: index('users_email_idx').on(table.email)
+    emailIdx: index('users_email_idx').on(table.email),
   })
 );
 

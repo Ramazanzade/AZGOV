@@ -3,7 +3,8 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dashboardRoutes from './routes/dashboardRoutes';
 import authRoutes from './routes/authRoutes';
-
+import userRoutes from './routes/userRoutes';
+import path from 'path';
 const app: Application = express();
 
 // Middleware
@@ -21,8 +22,12 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 // Routes
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
 app.use('/api/auth', authRoutes);         // ← YENİ
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/user', userRoutes);
 
 // 404
 app.use((req: Request, res: Response) => {

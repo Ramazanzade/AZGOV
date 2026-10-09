@@ -4,7 +4,7 @@ import HomePage from './pages/HomePage';
 import BakuNightPage from './pages/BakuNightPage';
 import CategoryPage from './pages/CategoryPage';
 import DatasetDetailPage from './pages/DatasetDetailPage';
-// import ProfilePage from './pages/ProfilePage';  // ← C-də yaradacağıq
+import UserProfile from './pages/UserProfile';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function App() {
@@ -15,6 +15,7 @@ function App() {
         <Route path="dashboard/baku-night" element={<BakuNightPage />} />
         <Route path="dashboard/:category" element={<CategoryPage />} />
         <Route path="dataset/:id" element={<DatasetDetailPage />} />
+        <Route path="/profile" element={<UserProfile />} />
         <Route path="dashboard/:category/:sub" element={<CategoryPage />} />
         <Route path="developer" element={<CategoryPage />} />
         <Route
