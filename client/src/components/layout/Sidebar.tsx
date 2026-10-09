@@ -3,10 +3,10 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronRight, Home, Search, X } from 'lucide-react';
 import { navigation, NavItem } from '../../data/navigation';
 import { useStats } from '../../hooks/useStats';
-import { useLang } from '../../i18n/LanguageContext';
+import { useLang , } from '../../i18n/LanguageContext';
 
 const Sidebar = () => {
-  const { t } = useLang();          // ✅ Hook is now inside the component
+  const { t  } = useLang();          // ✅ Hook is now inside the component
   const location = useLocation();
   const stats = useStats();
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
@@ -99,7 +99,7 @@ const Sidebar = () => {
             <Home size={18} className="text-white" />
           </div>
           <span className="text-lg font-bold">
-            DataHub<span className="text-accent-cyan">.az</span>
+            AzDatam<span className="text-accent-cyan">.az</span>
           </span>
         </div>
       </NavLink>

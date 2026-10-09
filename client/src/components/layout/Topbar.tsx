@@ -40,7 +40,7 @@ const Topbar = () => {
           >
             <Search size={16} />
             <span className="truncate">{t('topbar.searchPlaceholder')}</span>
-            <div className="ml-auto flex items-center gap-1 text-xs text-gray-500">
+            <div className="ml-auto flex items-center gap-1 text-xs text-gray-500" >
               <Command size={12} />K
             </div>
           </button>

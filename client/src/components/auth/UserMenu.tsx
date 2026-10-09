@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { User as UserIcon, LogOut, ChevronDown, ShieldCheck, LogIn, UserPlus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useAuthModal } from '../../context/AuthModalContext';
+import { useLang } from '../../i18n/LanguageContext';
 
 const UserMenu = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const { open } = useAuthModal();
+  const { t } = useLang();                                   // ← YENİ
   const navigate = useNavigate();
   const [openMenu, setOpenMenu] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -36,14 +38,14 @@ const UserMenu = () => {
               onClick={() => { open('signin'); setOpenMenu(false); }}
               className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-200 hover:bg-bg-hover hover:text-accent-cyan transition text-left"
             >
-              <LogIn size={14} /> Daxil ol
+              <LogIn size={14} /> {t('auth.menuSignin')}
             </button>
             <div className="h-px bg-border" />
             <button
               onClick={() => { open('signup'); setOpenMenu(false); }}
               className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-200 hover:bg-bg-hover hover:text-accent-cyan transition text-left"
             >
-              <UserPlus size={14} /> Qeydiyyat
+              <UserPlus size={14} /> {t('auth.menuSignup')}
             </button>
           </div>
         )}
@@ -87,7 +89,9 @@ const UserMenu = () => {
           <div className="px-4 py-3 border-b border-border">
             <div className="flex items-center gap-2 mb-1">
               <ShieldCheck size={12} className="text-accent-cyan" />
-              <span className="text-[10px] uppercase tracking-wider text-gray-500">Hesab</span>
+              <span className="text-[10px] uppercase tracking-wider text-gray-500">
+                {t('auth.account')}
+              </span>
             </div>
             <div className="text-sm text-gray-200 truncate">{user?.name}</div>
             <div className="text-[11px] text-gray-500 truncate">{user?.email}</div>
@@ -98,14 +102,14 @@ const UserMenu = () => {
             onClick={() => setOpenMenu(false)}
             className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-gray-300 hover:bg-bg-hover hover:text-accent-cyan transition"
           >
-            <UserIcon size={13} /> Profil
+            <UserIcon size={13} /> {t('auth.menuProfile')}
           </Link>
 
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-gray-300 hover:bg-bg-hover hover:text-red-400 transition"
           >
-            <LogOut size={13} /> Çıxış
+            <LogOut size={13} /> {t('auth.menuLogout')}
           </button>
         </div>
       )}

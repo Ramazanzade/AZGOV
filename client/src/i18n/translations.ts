@@ -2,18 +2,21 @@ export type Lang = 'az' | 'ru' | 'en';
 
 export const TRANSLATIONS = {
   az: {
-    // Sidebar
+    // ==================== NAVIGATION ====================
     'nav.home': 'Ana Səhifə',
     'nav.categories': 'MƏLUMAT KATEQORİYALARI',
     'nav.developer': 'Developer Portal',
     'nav.search': 'Naviqasiyada axtar...',
     'nav.noResults': 'Nəticə tapılmadı',
-    'detail.encodingWarning2': ' Bu dataset-də yerdə hərf itirilib (mənbə faylı xarabdır).Avtomatik bərpa cəhdi edə bilərik, amma nəticə 100% dəqiq olmaya bilər.',
-        'common.datasets2': ' API-lər, SDK-lar və inteqrasiya sənədləri. Bütün datasetlər JSON, CSV və GeoJSON formatlarında açıq şəkildə əlçatandır.',
-                        'home.digital': 'Rəqəmsal sütun tapılmadı',
-                        'home.um': 'İlk 200 sətir göstərilir. Ümumi:',
+'common.loadError': 'Data yüklənmədi',
+'common.latestData': 'Son məlumatlar',
+"drawer.downloadFile": "Faylı yüklə",
+    "drawer.apiMetadata": "API metadata",
+    "drawer.loadingData": "Data yüklənir...",
+    "drawer.errorTitle": "Xəta baş verdi",
+    "drawer.rowsCount": "{{count}} sətir",
 
-    // Kateqoriyalar
+    // ==================== KATEQORİYALAR ====================
     'cat.demographic': 'Demoqrafik və sosial statistika',
     'cat.population': 'Əhali',
     'cat.labor': 'Əmək bazarı',
@@ -42,15 +45,94 @@ export const TRANSLATIONS = {
     'cat.maps': 'Xəritələr',
     'cat.geojson': 'GeoJSON Faylları',
     'cat.kmz': 'KMZ Faylları',
-        'cat.other': 'Digərləri',
+    'cat.metro': 'Metropoliten',
+    'cat.regional': 'Regional',
+    'cat.other': 'Digər',
+    'cat.sport': 'İdman',
+    'cat.culture': 'Mədəniyyət',
 
+    // ==================== QRUPLAR ====================
+    'group.economy': 'İqtisadi statistika',
+    'group.population': 'Əhali',
+    'group.labor': 'Əmək bazarı',
+    'group.education': 'Təhsil',
+    'group.health': 'Səhiyyə',
+    'group.environment': 'Ətraf mühit',
+    'group.geo': 'Coğrafi məlumatlar',
+    'group.transport': 'Nəqliyyat',
+    'group.metro': 'Metropoliten',
+    'group.tourism': 'Turizm',
+    'group.regional': 'Regional',
+    'group.other': 'Digər',
+    'group.crime': 'Cinayətkarlıq',
+    'group.sport': 'İdman',
+    'group.culture': 'Mədəniyyət',
+    'group.industry': 'Sənaye',
+    'group.agriculture': 'Kənd təsərrüfatı',
+    'group.energy': 'Energetika',
+    'group.trade': 'Ticarət',
 
-    // Topbar
+    // ==================== TOPBAR ====================
     'topbar.searchPlaceholder': 'Məlumat axtar... (məs. "metro sərnişin", "iqtisadi göstəricilər")',
     'topbar.themeDark': 'Qaranlıq rejim',
     'topbar.themeLight': 'İşıqlı rejim',
 
-    // Ana Səhifə
+    // ==================== AUTH ====================
+    'auth.signin': 'Daxil ol',
+    'auth.signup': 'Qeydiyyat',
+    'auth.signinSubtitle': 'Hesabınıza daxil olun',
+    'auth.signupSubtitle': 'Yeni hesab yaradın',
+    'auth.otpTitle': 'Email təsdiqi',
+    'auth.otpSubtitle': 'Email ünvanınıza göndərilən 6 rəqəmli kod',
+
+    'auth.google': 'Google ilə davam edin',
+    'auth.googleError': 'Google ilə giriş alınmadı',
+    'auth.or': 'və ya',
+
+    'auth.name': 'Ad',
+    'auth.namePlaceholder': 'Adınız',
+    'auth.email': 'Email',
+    'auth.emailPlaceholder': 'sizin@email.com',
+    'auth.password': 'Parol',
+    'auth.passwordPlaceholder': 'Minimum 6 simvol',
+    'auth.passwordLoginPlaceholder': 'Parolunuz',
+
+    'auth.submitSignin': 'Daxil ol',
+    'auth.submitSignup': 'Hesab yarat',
+    'auth.submitVerify': 'Təsdiq et',
+    'auth.back': 'Geri',
+    'auth.loading': 'Yüklənir...',
+    'auth.sending': 'Göndərilir...',
+    'auth.verifying': 'Yoxlanılır...',
+
+    'auth.haveAccount': 'Artıq hesabınız var?',
+    'auth.noAccount': 'Hesabınız yoxdur?',
+    'auth.goSignin': 'Daxil ol',
+    'auth.goSignup': 'Qeydiyyat',
+
+    'auth.otpSent': 'Kod göndərildi:',
+    'auth.resend': 'Kodu yenidən göndər',
+    'auth.resendIn': 'Yenidən göndər',
+    'auth.changeEmail': 'Email-i dəyiş',
+
+    'auth.terms': 'Daxil olmaqla siz',
+    'auth.termsLink': 'İstifadə şərtlərini',
+    'auth.termsEnd': 'qəbul edirsiniz',
+
+    'auth.errorEmailInvalid': 'Düzgün email daxil edin',
+    'auth.errorPasswordShort': 'Parol minimum 6 simvol olmalıdır',
+    'auth.errorNameShort': 'Ad minimum 2 simvol olmalıdır',
+    'auth.errorGeneric': 'Xəta baş verdi',
+    'auth.errorCodeWrong': 'Kod yanlışdır',
+    'auth.errorCodeSend': 'Kod göndərilə bilmədi',
+
+    'auth.menuSignin': 'Daxil ol',
+    'auth.menuSignup': 'Qeydiyyat',
+    'auth.menuProfile': 'Profil',
+    'auth.menuLogout': 'Çıxış',
+    'auth.account': 'Hesab',
+
+    // ==================== HOME ====================
     'home.title': 'DataHub.az',
     'home.subtitle': 'Azərbaycan Respublikasının açıq məlumatlar portalı üzrə statistik göstəricilər, datasetlər və interaktiv vizuallaşdırmalar',
     'home.totalDatasets': 'Ümumi dataset',
@@ -63,14 +145,18 @@ export const TRANSLATIONS = {
     'home.devDesc': 'API-lər, SDK-lar və inteqrasiya sənədləri. Bütün datasetlər JSON, CSV və GeoJSON formatlarında açıq şəkildə əlçatandır.',
     'home.apiDocs': 'API Docs',
     'home.dataset': 'dataset',
+    'home.geo': 'GeoJSON data yoxdur',
+    'home.data': 'Data yoxdur',
+    'home.digital': 'Rəqəmsal sütun tapılmadı',
+    'home.um': 'İlk 200 sətir göstərilir. Ümumi:',
 
-    // Kateqoriya səhifəsi
+    // ==================== CATEGORY PAGE ====================
     'catPage.searchPlaceholder': 'Dataset axtar...',
     'catPage.found': 'dataset tapıldı',
     'catPage.loading': 'Yüklənir...',
     'catPage.noResults': 'Nəticə tapılmadı',
 
-    // Filter Panel
+    // ==================== FILTER ====================
     'filter.title': 'Filterlər',
     'filter.reset': 'Sıfırla',
     'filter.dateRange': 'Tarix aralığı',
@@ -86,7 +172,7 @@ export const TRANSLATIONS = {
     'filter.apiAccess': 'API Access',
     'filter.apiDocs': 'API Docs',
 
-    // Dataset Detail
+    // ==================== DATASET DETAIL ====================
     'detail.back': 'Geri',
     'detail.rows': 'sətir',
     'detail.sum': 'Cəm',
@@ -118,9 +204,10 @@ export const TRANSLATIONS = {
     'detail.hintMin': 'Ən kiçik dəyər',
     'detail.encodingWarning': 'Encoding problemi',
     'detail.encodingWarning1': 'Encoding problemi aşkarlandı',
+    'detail.encodingWarning2': 'Bu dataset-də yerdə hərf itirilib (mənbə faylı xarabdır). Avtomatik bərpa cəhdi edə bilərik, amma nəticə 100% dəqiq olmaya bilər.',
     'detail.encodingWarningDesc': 'Bu dataset-in mənbə faylı xarabdır — hərflər itirilib. Məlumatlar tam dəqiq deyil.',
 
-    // Info Panel
+    // ==================== INFO PANEL ====================
     'info.title': 'Məlumat',
     'info.name': 'Ad',
     'info.organization': 'Təşkilat',
@@ -132,27 +219,27 @@ export const TRANSLATIONS = {
     'info.download': 'Faylı yüklə',
     'info.apiMetadata': 'API metadata',
 
-    // Export
+    // ==================== EXPORT ====================
     'export.button': 'Export',
     'export.csv': 'CSV yüklə',
     'export.json': 'JSON yüklə',
     'export.png': 'Chart PNG',
 
-    // Search Modal
+    // ==================== SEARCH MODAL ====================
     'search.placeholder': 'Dataset, təşkilat və ya kateqoriya axtar...',
     'search.startTyping': 'Yazmağa başla — canlı nəticə görünəcək',
     'search.noResults': 'üçün nəticə tapılmadı',
     'search.results': 'nəticə',
     'search.open': 'Aç',
 
-    // Chart tipləri
+    // ==================== CHART ====================
     'chart.line': 'Line',
     'chart.bar': 'Bar',
     'chart.pie': 'Pie',
     'chart.chart': 'Qrafik',
     'chart.table': 'Cədvəl',
 
-    // Ümumi
+    // ==================== COMMON ====================
     'common.all': 'Hamısı',
     'common.loading': 'Yüklənir...',
     'common.error': 'Xəta',
@@ -160,37 +247,49 @@ export const TRANSLATIONS = {
     'common.apply': 'Tətbiq et',
     'common.clear': 'Təmizlə',
     'common.datasets': 'dataset',
-        'common.datasets1': ' Azərbaycan Respublikasının açıq məlumatlar portalı üzrə statistik göstəricilər, datasetlər və interaktiv vizuallaşdırmalar',
-'cat.metro': 'Metropoliten',
-'cat.regional': 'Regional',
-'cat.sport': 'İdman',
-'cat.culture': 'Mədəniyyət',
-            'home.geo': 'GeoJSON data yoxdur',
-                        'home.data': 'Data yoxdur',
+    'common.datasets1': 'Azərbaycan Respublikasının açıq məlumatlar portalı üzrə statistik göstəricilər, datasetlər və interaktiv vizuallaşdırmalar',
+    'common.datasets2': 'API-lər, SDK-lar və inteqrasiya sənədləri. Bütün datasetlər JSON, CSV və GeoJSON formatlarında açıq şəkildə əlçatandır.',
+
+    // ==================== PROFILE ====================
+    'profile.title': 'Profil',
+    'profile.accountInfo': 'Hesab məlumatları',
+    'profile.favorites': 'Sevimli dataset-lər',
+    'profile.noFavorites': 'Hələ sevimli dataset yoxdur',
+    'profile.noFavoritesHint': 'Dataset səhifələrində ⭐ ikonuna klikləyərək sevimlilərə əlavə edə bilərsiniz',
+    'profile.statsViewed': 'Baxdığım dataset',
+    'profile.statsFavorites': 'Sevimlilər',
+    'profile.statsExports': 'Export',
+    'profile.statsStatus': 'Hesab statusu',
+    'profile.statusActive': 'Aktiv',
+    'profile.id': 'ID',
+    'profile.email': 'Email',
+    'profile.name': 'Ad',
+    'profile.accountType': 'Hesab növü',
+    'profile.accountStandard': 'Standart',
+    'profile.logout': 'Çıxış',
+    'profile.backHome': 'Ana səhifə',
+    'export.loginRequired': 'Eksport üçün daxil olmalısınız',
+    'search.openClose': 'Aç / Bağla',
 
 
   },
 
   ru: {
+    // ==================== NAVIGATION ====================
     'nav.home': 'Главная',
     'nav.categories': 'КАТЕГОРИИ ДАННЫХ',
     'nav.developer': 'Портал разработчика',
     'nav.search': 'Поиск в навигации...',
     'nav.noResults': 'Результатов не найдено',
-    'detail.encodingWarning1': 'Обнаружена проблема кодирования.',
-    'detail.encodingWarning2': 'В этом наборе данных отсутствует одна буква (исходный файл поврежден). Мы можем попытаться выполнить автоматическое восстановление, но результат может быть не на 100% точным.',
-    'detail.periodDynamics1': 'Динамика',
-        'common.datasets1': 'Статистические показатели, наборы данных и интерактивные визуализации на портале открытых данных Азербайджанской Республики.',
-        'common.datasets2': 'API, SDK и документация по интеграции. Все наборы данных общедоступны в форматах JSON, CSV и GeoJSON.',
-'cat.metro': 'Метрополитен',
-'cat.regional': 'Региональный',
-'cat.other': 'Другое',
-'cat.sport': 'Спорт',
-                        'home.data': 'Нет данных',
-                        'home.digital': 'Числовой столбец не найден',
-                        'home.um': 'Отображаются первые 200 строк. Всего:',
-
-'cat.culture': 'Культура',
+'search.openClose': 'Открыть / Закрыть',
+'common.loadError': 'Не удалось загрузить данные',
+'common.latestData': 'Последние данные',
+ "drawer.downloadFile": "Скачать файл",
+    "drawer.apiMetadata": "API метаданные",
+    "drawer.loadingData": "Загрузка данных...",
+    "drawer.errorTitle": "Произошла ошибка",
+    "drawer.rowsCount": "{{count}} строк",
+    // ==================== КАТЕГОРИИ ====================
     'cat.demographic': 'Демография и социальная статистика',
     'cat.population': 'Население',
     'cat.labor': 'Рынок труда',
@@ -219,11 +318,94 @@ export const TRANSLATIONS = {
     'cat.maps': 'Карты',
     'cat.geojson': 'Файлы GeoJSON',
     'cat.kmz': 'Файлы KMZ',
+    'cat.metro': 'Метрополитен',
+    'cat.regional': 'Региональный',
+    'cat.other': 'Другое',
+    'cat.sport': 'Спорт',
+    'cat.culture': 'Культура',
 
+    // ==================== ГРУППЫ ====================
+    'group.economy': 'Экономическая статистика',
+    'group.population': 'Население',
+    'group.labor': 'Рынок труда',
+    'group.education': 'Образование',
+    'group.health': 'Здравоохранение',
+    'group.environment': 'Окружающая среда',
+    'group.geo': 'Географические данные',
+    'group.transport': 'Транспорт',
+    'group.metro': 'Метрополитен',
+    'group.tourism': 'Туризм',
+    'group.regional': 'Региональный',
+    'group.other': 'Другое',
+    'group.crime': 'Преступность',
+    'group.sport': 'Спорт',
+    'group.culture': 'Культура',
+    'group.industry': 'Промышленность',
+    'group.agriculture': 'Сельское хозяйство',
+    'group.energy': 'Энергетика',
+    'group.trade': 'Торговля',
+
+    // ==================== TOPBAR ====================
     'topbar.searchPlaceholder': 'Поиск данных... (например, "метро пассажиры", "экономические показатели")',
     'topbar.themeDark': 'Тёмная тема',
     'topbar.themeLight': 'Светлая тема',
 
+    // ==================== AUTH ====================
+    'auth.signin': 'Войти',
+    'auth.signup': 'Регистрация',
+    'auth.signinSubtitle': 'Войдите в свой аккаунт',
+    'auth.signupSubtitle': 'Создать новый аккаунт',
+    'auth.otpTitle': 'Подтверждение email',
+    'auth.otpSubtitle': '6-значный код, отправленный на вашу почту',
+
+    'auth.google': 'Продолжить с Google',
+    'auth.googleError': 'Не удалось войти через Google',
+    'auth.or': 'или',
+
+    'auth.name': 'Имя',
+    'auth.namePlaceholder': 'Ваше имя',
+    'auth.email': 'Email',
+    'auth.emailPlaceholder': 'ваш@email.com',
+    'auth.password': 'Пароль',
+    'auth.passwordPlaceholder': 'Минимум 6 символов',
+    'auth.passwordLoginPlaceholder': 'Ваш пароль',
+
+    'auth.submitSignin': 'Войти',
+    'auth.submitSignup': 'Создать аккаунт',
+    'auth.submitVerify': 'Подтвердить',
+    'auth.back': 'Назад',
+    'auth.loading': 'Загрузка...',
+    'auth.sending': 'Отправка...',
+    'auth.verifying': 'Проверка...',
+
+    'auth.haveAccount': 'Уже есть аккаунт?',
+    'auth.noAccount': 'Нет аккаунта?',
+    'auth.goSignin': 'Войти',
+    'auth.goSignup': 'Регистрация',
+
+    'auth.otpSent': 'Код отправлен:',
+    'auth.resend': 'Отправить код снова',
+    'auth.resendIn': 'Отправить снова',
+    'auth.changeEmail': 'Изменить email',
+
+    'auth.terms': 'Входя в систему, вы принимаете',
+    'auth.termsLink': 'Условия использования',
+    'auth.termsEnd': '',
+
+    'auth.errorEmailInvalid': 'Введите корректный email',
+    'auth.errorPasswordShort': 'Пароль должен быть минимум 6 символов',
+    'auth.errorNameShort': 'Имя должно быть минимум 2 символа',
+    'auth.errorGeneric': 'Произошла ошибка',
+    'auth.errorCodeWrong': 'Неверный код',
+    'auth.errorCodeSend': 'Не удалось отправить код',
+
+    'auth.menuSignin': 'Войти',
+    'auth.menuSignup': 'Регистрация',
+    'auth.menuProfile': 'Профиль',
+    'auth.menuLogout': 'Выйти',
+    'auth.account': 'Аккаунт',
+
+    // ==================== HOME ====================
     'home.title': 'DataHub.az',
     'home.subtitle': 'Статистические показатели, наборы данных и интерактивные визуализации портала открытых данных Азербайджанской Республики',
     'home.totalDatasets': 'Всего наборов',
@@ -236,14 +418,18 @@ export const TRANSLATIONS = {
     'home.devDesc': 'API, SDK и документация по интеграции. Все наборы данных доступны в форматах JSON, CSV и GeoJSON.',
     'home.apiDocs': 'API документация',
     'home.dataset': 'набор',
-        'home.geo': 'Нет данных GeoJSON',
+    'home.geo': 'Нет данных GeoJSON',
+    'home.data': 'Нет данных',
+    'home.digital': 'Числовой столбец не найден',
+    'home.um': 'Отображаются первые 200 строк. Всего:',
 
-
+    // ==================== CATEGORY PAGE ====================
     'catPage.searchPlaceholder': 'Поиск набора данных...',
     'catPage.found': 'наборов найдено',
     'catPage.loading': 'Загрузка...',
     'catPage.noResults': 'Результатов не найдено',
 
+    // ==================== FILTER ====================
     'filter.title': 'Фильтры',
     'filter.reset': 'Сбросить',
     'filter.dateRange': 'Диапазон дат',
@@ -259,6 +445,7 @@ export const TRANSLATIONS = {
     'filter.apiAccess': 'API доступ',
     'filter.apiDocs': 'API документация',
 
+    // ==================== DATASET DETAIL ====================
     'detail.back': 'Назад',
     'detail.rows': 'строк',
     'detail.sum': 'Сумма',
@@ -268,6 +455,7 @@ export const TRANSLATIONS = {
     'detail.count': 'Количество',
     'detail.stats': 'Статистика',
     'detail.periodDynamics': 'Динамика по периоду',
+    'detail.periodDynamics1': 'динамика',
     'detail.series': 'серий',
     'detail.distribution': 'Распределение',
     'detail.top10': 'Топ 10',
@@ -288,8 +476,11 @@ export const TRANSLATIONS = {
     'detail.hintMax': 'Наибольшее значение',
     'detail.hintMin': 'Наименьшее значение',
     'detail.encodingWarning': 'Проблема с кодировкой',
+    'detail.encodingWarning1': 'Обнаружена проблема кодирования',
+    'detail.encodingWarning2': 'В этом наборе данных отсутствует одна буква (исходный файл поврежден). Мы можем попытаться выполнить автоматическое восстановление, но результат может быть не на 100% точным.',
     'detail.encodingWarningDesc': 'Исходный файл этого набора данных повреждён — символы утеряны. Данные не совсем точны.',
 
+    // ==================== INFO PANEL ====================
     'info.title': 'Информация',
     'info.name': 'Название',
     'info.organization': 'Организация',
@@ -301,53 +492,74 @@ export const TRANSLATIONS = {
     'info.download': 'Скачать файл',
     'info.apiMetadata': 'API метаданные',
 
+    // ==================== EXPORT ====================
     'export.button': 'Экспорт',
     'export.csv': 'Скачать CSV',
     'export.json': 'Скачать JSON',
     'export.png': 'Chart PNG',
 
+    // ==================== SEARCH MODAL ====================
     'search.placeholder': 'Поиск набора, организации или категории...',
     'search.startTyping': 'Начните вводить — результаты появятся сразу',
     'search.noResults': 'результатов не найдено для',
     'search.results': 'результатов',
     'search.open': 'Открыть',
 
+    // ==================== CHART ====================
     'chart.line': 'Линия',
     'chart.bar': 'Столбцы',
     'chart.pie': 'Круг',
     'chart.chart': 'График',
     'chart.table': 'Таблица',
 
+    // ==================== COMMON ====================
     'common.all': 'Все',
     'common.loading': 'Загрузка...',
     'common.error': 'Ошибка',
     'common.close': 'Закрыть',
     'common.apply': 'Применить',
     'common.clear': 'Очистить',
-    'common.datasets': 'наборов'
+    'common.datasets': 'наборов',
+    'common.datasets1': 'Статистические показатели, наборы данных и интерактивные визуализации на портале открытых данных Азербайджанской Республики.',
+    'common.datasets2': 'API, SDK и документация по интеграции. Все наборы данных общедоступны в форматах JSON, CSV и GeoJSON.',
+
+    // ==================== PROFILE ====================
+    'profile.title': 'Профиль',
+    'profile.accountInfo': 'Информация об аккаунте',
+    'profile.favorites': 'Избранные наборы',
+    'profile.noFavorites': 'Пока нет избранных наборов',
+    'profile.noFavoritesHint': 'Нажмите ⭐ на странице набора, чтобы добавить в избранное',
+    'profile.statsViewed': 'Просмотрено',
+    'profile.statsFavorites': 'Избранное',
+    'profile.statsExports': 'Экспорт',
+    'profile.statsStatus': 'Статус аккаунта',
+    'profile.statusActive': 'Активен',
+    'profile.id': 'ID',
+    'profile.email': 'Email',
+    'profile.name': 'Имя',
+    'profile.accountType': 'Тип аккаунта',
+    'profile.accountStandard': 'Стандартный',
+    'profile.logout': 'Выйти',
+    'profile.backHome': 'Главная',
+    'export.loginRequired': 'Войдите, чтобы экспортировать',
   },
 
   en: {
+    // ==================== NAVIGATION ====================
     'nav.home': 'Home',
     'nav.categories': 'DATA CATEGORIES',
     'nav.developer': 'Developer Portal',
     'nav.search': 'Search in navigation...',
     'nav.noResults': 'No results found',
-    'detail.encodingWarning1': 'Encoding problem detected',
-    'detail.encodingWarning2': 'A letter is missing in this dataset (the source file is corrupted). We can attempt an automatic recovery, but the result might not be 100% accurate.',
-    'detail.periodDynamics1': 'dynamics',
-        'common.datasets1': 'Statistical indicators, datasets, and interactive visualizations from the Republic of Azerbaijans open data portal.',
-        'common.datasets2': 'APIs, SDKs, and integration documentation. All datasets are openly available in JSON, CSV, and GeoJSON formats.',
-        'cat.other': 'Other',
-'cat.metro': 'Metro',
-'cat.regional': 'Regional',
-'cat.sport': 'Sports',
-'cat.culture': 'Culture',
-        'home.geo': 'No GeoJSON data',
-                        'home.data': 'No data available',
-                        'home.digital': 'Digital column not found',
-                        'home.um': 'Showing the first 200 lines. Total:',
-
+'search.openClose': 'Open / Close',
+'common.loadError': 'Failed to load data',
+'common.latestData': 'Latest data',
+"drawer.downloadFile": "Download file",
+    "drawer.apiMetadata": "API metadata",
+    "drawer.loadingData": "Loading data...",
+    "drawer.errorTitle": "An error occurred",
+    "drawer.rowsCount": "{{count}} rows",
+    // ==================== CATEGORIES ====================
     'cat.demographic': 'Demographic and social statistics',
     'cat.population': 'Population',
     'cat.labor': 'Labor market',
@@ -376,11 +588,94 @@ export const TRANSLATIONS = {
     'cat.maps': 'Maps',
     'cat.geojson': 'GeoJSON Files',
     'cat.kmz': 'KMZ Files',
+    'cat.metro': 'Metro',
+    'cat.regional': 'Regional',
+    'cat.other': 'Other',
+    'cat.sport': 'Sports',
+    'cat.culture': 'Culture',
 
+    // ==================== GROUPS ====================
+    'group.economy': 'Economic statistics',
+    'group.population': 'Population',
+    'group.labor': 'Labor market',
+    'group.education': 'Education',
+    'group.health': 'Healthcare',
+    'group.environment': 'Environment',
+    'group.geo': 'Geographic data',
+    'group.transport': 'Transport',
+    'group.metro': 'Metro',
+    'group.tourism': 'Tourism',
+    'group.regional': 'Regional',
+    'group.other': 'Other',
+    'group.crime': 'Crime',
+    'group.sport': 'Sports',
+    'group.culture': 'Culture',
+    'group.industry': 'Industry',
+    'group.agriculture': 'Agriculture',
+    'group.energy': 'Energy',
+    'group.trade': 'Trade',
+
+    // ==================== TOPBAR ====================
     'topbar.searchPlaceholder': 'Search data... (e.g. "metro passengers", "economic indicators")',
     'topbar.themeDark': 'Dark theme',
     'topbar.themeLight': 'Light theme',
 
+    // ==================== AUTH ====================
+    'auth.signin': 'Sign in',
+    'auth.signup': 'Sign up',
+    'auth.signinSubtitle': 'Sign in to your account',
+    'auth.signupSubtitle': 'Create a new account',
+    'auth.otpTitle': 'Email verification',
+    'auth.otpSubtitle': '6-digit code sent to your email',
+
+    'auth.google': 'Continue with Google',
+    'auth.googleError': 'Google sign-in failed',
+    'auth.or': 'or',
+
+    'auth.name': 'Name',
+    'auth.namePlaceholder': 'Your name',
+    'auth.email': 'Email',
+    'auth.emailPlaceholder': 'you@email.com',
+    'auth.password': 'Password',
+    'auth.passwordPlaceholder': 'Minimum 6 characters',
+    'auth.passwordLoginPlaceholder': 'Your password',
+
+    'auth.submitSignin': 'Sign in',
+    'auth.submitSignup': 'Create account',
+    'auth.submitVerify': 'Verify',
+    'auth.back': 'Back',
+    'auth.loading': 'Loading...',
+    'auth.sending': 'Sending...',
+    'auth.verifying': 'Verifying...',
+
+    'auth.haveAccount': 'Already have an account?',
+    'auth.noAccount': "Don't have an account?",
+    'auth.goSignin': 'Sign in',
+    'auth.goSignup': 'Sign up',
+
+    'auth.otpSent': 'Code sent to:',
+    'auth.resend': 'Resend code',
+    'auth.resendIn': 'Resend in',
+    'auth.changeEmail': 'Change email',
+
+    'auth.terms': 'By signing in you accept the',
+    'auth.termsLink': 'Terms of Service',
+    'auth.termsEnd': '',
+
+    'auth.errorEmailInvalid': 'Enter a valid email',
+    'auth.errorPasswordShort': 'Password must be at least 6 characters',
+    'auth.errorNameShort': 'Name must be at least 2 characters',
+    'auth.errorGeneric': 'An error occurred',
+    'auth.errorCodeWrong': 'Invalid code',
+    'auth.errorCodeSend': 'Failed to send code',
+
+    'auth.menuSignin': 'Sign in',
+    'auth.menuSignup': 'Sign up',
+    'auth.menuProfile': 'Profile',
+    'auth.menuLogout': 'Sign out',
+    'auth.account': 'Account',
+
+    // ==================== HOME ====================
     'home.title': 'DataHub.az',
     'home.subtitle': 'Statistical indicators, datasets and interactive visualizations from the Open Data Portal of the Republic of Azerbaijan',
     'home.totalDatasets': 'Total datasets',
@@ -393,12 +688,18 @@ export const TRANSLATIONS = {
     'home.devDesc': 'APIs, SDKs and integration documentation. All datasets are available in JSON, CSV and GeoJSON formats.',
     'home.apiDocs': 'API Docs',
     'home.dataset': 'datasets',
+    'home.geo': 'No GeoJSON data',
+    'home.data': 'No data available',
+    'home.digital': 'Numeric column not found',
+    'home.um': 'Showing the first 200 rows. Total:',
 
+    // ==================== CATEGORY PAGE ====================
     'catPage.searchPlaceholder': 'Search datasets...',
     'catPage.found': 'datasets found',
     'catPage.loading': 'Loading...',
     'catPage.noResults': 'No results found',
 
+    // ==================== FILTER ====================
     'filter.title': 'Filters',
     'filter.reset': 'Reset',
     'filter.dateRange': 'Date range',
@@ -414,6 +715,7 @@ export const TRANSLATIONS = {
     'filter.apiAccess': 'API Access',
     'filter.apiDocs': 'API Docs',
 
+    // ==================== DATASET DETAIL ====================
     'detail.back': 'Back',
     'detail.rows': 'rows',
     'detail.sum': 'Sum',
@@ -423,6 +725,7 @@ export const TRANSLATIONS = {
     'detail.count': 'Count',
     'detail.stats': 'Statistics',
     'detail.periodDynamics': 'Period dynamics',
+    'detail.periodDynamics1': 'dynamics',
     'detail.series': 'series',
     'detail.distribution': 'Distribution',
     'detail.top10': 'Top 10',
@@ -443,8 +746,11 @@ export const TRANSLATIONS = {
     'detail.hintMax': 'Largest value',
     'detail.hintMin': 'Smallest value',
     'detail.encodingWarning': 'Encoding problem',
+    'detail.encodingWarning1': 'Encoding problem detected',
+    'detail.encodingWarning2': 'A letter is missing in this dataset (the source file is corrupted). We can attempt an automatic recovery, but the result might not be 100% accurate.',
     'detail.encodingWarningDesc': 'The source file of this dataset is corrupted — characters are lost. Data may not be fully accurate.',
 
+    // ==================== INFO PANEL ====================
     'info.title': 'Information',
     'info.name': 'Name',
     'info.organization': 'Organization',
@@ -456,30 +762,56 @@ export const TRANSLATIONS = {
     'info.download': 'Download file',
     'info.apiMetadata': 'API metadata',
 
+    // ==================== EXPORT ====================
     'export.button': 'Export',
     'export.csv': 'Download CSV',
     'export.json': 'Download JSON',
     'export.png': 'Chart PNG',
 
+    // ==================== SEARCH MODAL ====================
     'search.placeholder': 'Search dataset, organization or category...',
     'search.startTyping': 'Start typing — live results will appear',
     'search.noResults': 'No results found for',
     'search.results': 'results',
     'search.open': 'Open',
 
+    // ==================== CHART ====================
     'chart.line': 'Line',
     'chart.bar': 'Bar',
     'chart.pie': 'Pie',
     'chart.chart': 'Chart',
     'chart.table': 'Table',
 
+    // ==================== COMMON ====================
     'common.all': 'All',
     'common.loading': 'Loading...',
     'common.error': 'Error',
     'common.close': 'Close',
     'common.apply': 'Apply',
     'common.clear': 'Clear',
-    'common.datasets': 'datasets'
+    'common.datasets': 'datasets',
+    'common.datasets1': 'Statistical indicators, datasets, and interactive visualizations from the Republic of Azerbaijan open data portal.',
+    'common.datasets2': 'APIs, SDKs, and integration documentation. All datasets are openly available in JSON, CSV, and GeoJSON formats.',
+
+    // ==================== PROFILE ====================
+    'profile.title': 'Profile',
+    'profile.accountInfo': 'Account information',
+    'profile.favorites': 'Favorite datasets',
+    'profile.noFavorites': 'No favorite datasets yet',
+    'profile.noFavoritesHint': 'Click ⭐ on a dataset page to add it to favorites',
+    'profile.statsViewed': 'Viewed datasets',
+    'profile.statsFavorites': 'Favorites',
+    'profile.statsExports': 'Exports',
+    'profile.statsStatus': 'Account status',
+    'profile.statusActive': 'Active',
+    'profile.id': 'ID',
+    'profile.email': 'Email',
+    'profile.name': 'Name',
+    'profile.accountType': 'Account type',
+    'profile.accountStandard': 'Standard',
+    'profile.logout': 'Sign out',
+    'profile.backHome': 'Home',
+'export.loginRequired': 'Please log in to export',
   }
 } as const;
 

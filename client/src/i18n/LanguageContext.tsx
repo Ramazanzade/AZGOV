@@ -1,10 +1,12 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { TRANSLATIONS, Lang, TranslationKey } from './translations';
 
+type Params = Record<string, string | number>;
+
 interface LangCtx {
   lang: Lang;
   setLang: (l: Lang) => void;
-  t: (key: TranslationKey, fallback?: string) => string;
+  t: (key: TranslationKey, fallbackOrParams?: string | Params) => string;
 }
 
 const Ctx = createContext<LangCtx>({
@@ -27,9 +29,20 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
 
   const setLang = (l: Lang) => setLangState(l);
 
-  const t = (key: TranslationKey, fallback?: string): string => {
+  const t = (key: TranslationKey, fallbackOrParams?: string | Params): string => {
+    const fallback = typeof fallbackOrParams === 'string' ? fallbackOrParams : undefined;
+    const params = typeof fallbackOrParams === 'object' ? fallbackOrParams : undefined;
+
     const dict = TRANSLATIONS[lang] as Record<string, string>;
-    return dict[key] || (TRANSLATIONS.az as Record<string, string>)[key] || fallback || key;
+    let text =
+      dict[key] || (TRANSLATIONS.az as Record<string, string>)[key] || fallback || key;
+
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        text = text.split(`{{${k}}}`).join(String(v));
+      }
+    }
+    return text;
   };
 
   return <Ctx.Provider value={{ lang, setLang, t }}>{children}</Ctx.Provider>;

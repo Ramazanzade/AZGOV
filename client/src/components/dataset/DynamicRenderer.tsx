@@ -3,6 +3,7 @@ import { Table2, BarChart3 } from 'lucide-react';
 import TableRenderer from '../renderers/TableRenderer';
 import MapRenderer from '../renderers/MapRenderer';
 import ChartRenderer from '../renderers/ChartRenderer';
+import { useLang } from '../../i18n/LanguageContext';
 
 interface Props { format: string; isGeoJSON: boolean; data: any }
 
@@ -10,6 +11,7 @@ type ViewMode = 'chart' | 'table';
 
 const DynamicRenderer = ({ format, isGeoJSON, data }: Props) => {
   const [view, setView] = useState<ViewMode>('table');
+  const { t } = useLang();
 
   if (isGeoJSON || format === 'GEOJSON') return <MapRenderer data={data} />;
 
@@ -37,7 +39,7 @@ const DynamicRenderer = ({ format, isGeoJSON, data }: Props) => {
             view === 'chart' ? 'bg-accent-cyan/15 text-accent-cyan' : 'text-gray-400 hover:text-white'
           }`}
         >
-          <BarChart3 size={12} /> Qrafik
+          <BarChart3 size={12} /> {t('chart.chart')}
         </button>
         <button
           onClick={() => setView('table')}
@@ -45,7 +47,7 @@ const DynamicRenderer = ({ format, isGeoJSON, data }: Props) => {
             view === 'table' ? 'bg-accent-cyan/15 text-accent-cyan' : 'text-gray-400 hover:text-white'
           }`}
         >
-          <Table2 size={12} /> Cədvəl
+          <Table2 size={12} /> {t('chart.table')}
         </button>
       </div>
 

@@ -4,6 +4,7 @@ import { Download, FileText, FileJson, Image, Loader2, ChevronDown, Lock } from 
 import { exportCSV, exportJSON, exportPNG, buildFilename } from '../../utils/exporters';
 import { useAuth } from '../../context/AuthContext';
 import { useAuthModal } from '../../context/AuthModalContext';
+import { useLang } from '../../i18n/LanguageContext';
 
 interface Props {
   title: string;
@@ -13,18 +14,20 @@ interface Props {
 
 const ExportButtons = ({ title, data, chartRef }: Props) => {
   const { isAuthenticated } = useAuth();
+  const { t } = useLang();                                   // ← YENİ
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
-const { open: openAuthModal } = useAuthModal();
+  const { open: openAuthModal } = useAuthModal();
 
   const handleClick = () => {
-  if (!isAuthenticated) {
-    openAuthModal('signin');   // ← modal aç, yönləndirmə YOX
-    return;
-  }
-  setOpen(v => !v);
-};
+    if (!isAuthenticated) {
+      openAuthModal('signin');
+      return;
+    }
+    setOpen(v => !v);
+  };
+
   const handle = async (type: 'csv' | 'json' | 'png') => {
     setBusy(type);
     try {
@@ -50,10 +53,10 @@ const { open: openAuthModal } = useAuthModal();
             ? 'bg-bg-card border-border text-gray-300 hover:border-accent-cyan/50 hover:text-accent-cyan'
             : 'bg-bg-card border-border text-gray-500 hover:border-accent-cyan/50'
         }`}
-        title={!isAuthenticated ? 'Export üçün daxil olun' : 'Export'}
+        title={!isAuthenticated ? t('export.loginRequired') : t('export.button')}
       >
         {isAuthenticated ? <Download size={13} /> : <Lock size={13} />}
-        Export
+        {t('export.button')}
         {isAuthenticated && (
           <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
         )}
@@ -65,21 +68,21 @@ const { open: openAuthModal } = useAuthModal();
           <div className="absolute right-0 top-full mt-1 w-48 rounded-lg bg-bg-card border border-border shadow-xl z-50 overflow-hidden">
             <MenuItem
               icon={FileText}
-              label="CSV yüklə"
+              label={t('export.csv')}
               busy={busy === 'csv'}
               disabled={!Array.isArray(data)}
               onClick={() => handle('csv')}
             />
             <MenuItem
               icon={FileJson}
-              label="JSON yüklə"
+              label={t('export.json')}
               busy={busy === 'json'}
               disabled={!data}
               onClick={() => handle('json')}
             />
             <MenuItem
               icon={Image}
-              label="Chart PNG"
+              label={t('export.png')}
               busy={busy === 'png'}
               disabled={!chartRef?.current}
               onClick={() => handle('png')}

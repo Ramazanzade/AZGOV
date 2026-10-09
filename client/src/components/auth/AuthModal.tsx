@@ -13,6 +13,7 @@ import {
 } from '../../services/authApi';
 import { useAuth } from '../../context/AuthContext';
 import { useAuthModal } from '../../context/AuthModalContext';
+import { useLang } from '../../i18n/LanguageContext';
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN = 60;
@@ -22,6 +23,7 @@ type Step = 'form' | 'otp';
 const AuthModal = () => {
   const { mode, close, switchMode } = useAuthModal();
   const { setUser } = useAuth();
+  const { t } = useLang();                                  // ← YENİ
 
   const [step, setStep] = useState<Step>('form');
   const [email, setEmail] = useState('');
@@ -84,22 +86,21 @@ const AuthModal = () => {
     setError(null);
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('Düzgün email daxil edin');
+      setError(t('auth.errorEmailInvalid'));
       return;
     }
     if (!password || password.length < 6) {
-      setError('Parol minimum 6 simvol olmalıdır');
+      setError(t('auth.errorPasswordShort'));
       return;
     }
     if (mode === 'signup' && (!name || name.trim().length < 2)) {
-      setError('Ad minimum 2 simvol olmalıdır');
+      setError(t('auth.errorNameShort'));
       return;
     }
 
     setLoading(true);
     try {
       if (mode === 'signup') {
-        // 1. Backend: user yarat + OTP göndər
         const res = await registerUser(email, password, name.trim());
         if (res.needsVerification) {
           setStep('otp');
@@ -107,13 +108,12 @@ const AuthModal = () => {
           setDigits(Array(OTP_LENGTH).fill(''));
         }
       } else {
-        // 2. Signin — birbaşa login
         const user = await loginWithPassword(email, password);
         setUser(user);
         close();
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Xəta baş verdi');
+      setError(err.response?.data?.message || t('auth.errorGeneric'));
     } finally {
       setLoading(false);
     }
@@ -133,7 +133,7 @@ const AuthModal = () => {
       setUser(user);
       close();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Kod yanlışdır');
+      setError(err.response?.data?.message || t('auth.errorCodeWrong'));
       setDigits(Array(OTP_LENGTH).fill(''));
       inputsRef.current[0]?.focus();
     } finally {
@@ -151,7 +151,7 @@ const AuthModal = () => {
       await sendOtp(email);
       setCooldown(RESEND_COOLDOWN);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Kod göndərilə bilmədi');
+      setError(err.response?.data?.message || t('auth.errorCodeSend'));
     }
   };
 
@@ -206,7 +206,7 @@ const AuthModal = () => {
       setUser(user);
       close();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Google ilə giriş alınmadı');
+      setError(err.response?.data?.message || t('auth.googleError'));
     } finally {
       setLoading(false);
     }
@@ -231,9 +231,9 @@ const AuthModal = () => {
           <>
             <div className="flex items-center justify-between px-6 pt-6 pb-2">
               <div>
-                <h2 className="text-lg font-bold">Email təsdiqi</h2>
+                <h2 className="text-lg font-bold">{t('auth.otpTitle')}</h2>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  Email ünvanınıza göndərilən 6 rəqəmli kod
+                  {t('auth.otpSubtitle')}
                 </p>
               </div>
               <button
@@ -249,11 +249,11 @@ const AuthModal = () => {
                 onClick={() => { setStep('form'); setError(null); }}
                 className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-accent-cyan mb-4"
               >
-                <ArrowLeft size={12} /> Geri
+                <ArrowLeft size={12} /> {t('auth.back')}
               </button>
 
               <div className="text-center mb-5">
-                <p className="text-xs text-gray-400 mb-1">Kod göndərildi:</p>
+                <p className="text-xs text-gray-400 mb-1">{t('auth.otpSent')}</p>
                 <p className="text-sm text-accent-cyan break-all">{email}</p>
               </div>
 
@@ -277,7 +277,7 @@ const AuthModal = () => {
 
               {loading && (
                 <div className="flex items-center justify-center gap-2 text-accent-cyan text-sm mb-4">
-                  <Loader2 size={14} className="animate-spin" /> Yoxlanılır...
+                  <Loader2 size={14} className="animate-spin" /> {t('auth.verifying')}
                 </div>
               )}
 
@@ -293,7 +293,7 @@ const AuthModal = () => {
                 disabled={loading || digits.some(d => !d)}
                 className="w-full py-3 rounded-lg bg-gradient-to-r from-accent-cyan to-accent-blue text-white text-sm font-medium hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                Təsdiq et
+                {t('auth.submitVerify')}
               </button>
 
               <div className="text-center mt-5">
@@ -303,7 +303,9 @@ const AuthModal = () => {
                   className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-accent-cyan transition disabled:opacity-50"
                 >
                   <RefreshCw size={12} />
-                  {cooldown > 0 ? `Yenidən göndər (${cooldown}s)` : 'Kodu yenidən göndər'}
+                  {cooldown > 0
+                    ? `${t('auth.resendIn')} (${cooldown}s)`
+                    : t('auth.resend')}
                 </button>
               </div>
             </div>
@@ -314,10 +316,10 @@ const AuthModal = () => {
             <div className="flex items-center justify-between px-6 pt-6 pb-2">
               <div>
                 <h2 className="text-lg font-bold">
-                  {isSignup ? 'Qeydiyyat' : 'Daxil ol'}
+                  {isSignup ? t('auth.signup') : t('auth.signin')}
                 </h2>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {isSignup ? 'Yeni hesab yaradın' : 'Hesabınıza daxil olun'}
+                  {isSignup ? t('auth.signupSubtitle') : t('auth.signinSubtitle')}
                 </p>
               </div>
               <button
@@ -332,7 +334,7 @@ const AuthModal = () => {
               <div className="mb-4">
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
-                  onError={() => setError('Google ilə giriş alınmadı')}
+                  onError={() => setError(t('auth.googleError'))}
                   theme="filled_black"
                   size="large"
                   text="continue_with"
@@ -343,21 +345,25 @@ const AuthModal = () => {
 
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex-1 h-px bg-border" />
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider">və ya</span>
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider">
+                  {t('auth.or')}
+                </span>
                 <div className="flex-1 h-px bg-border" />
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-3">
                 {isSignup && (
                   <div>
-                    <label className="block text-xs text-gray-400 mb-1.5">Ad</label>
+                    <label className="block text-xs text-gray-400 mb-1.5">
+                      {t('auth.name')}
+                    </label>
                     <div className="relative">
                       <UserIcon size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                       <input
                         type="text"
                         value={name}
                         onChange={e => setName(e.target.value)}
-                        placeholder="Adınız"
+                        placeholder={t('auth.namePlaceholder')}
                         disabled={loading}
                         className="w-full bg-bg-primary border border-border rounded-lg pl-10 pr-3 py-2.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-accent-cyan/50 disabled:opacity-50"
                       />
@@ -366,7 +372,9 @@ const AuthModal = () => {
                 )}
 
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">Email</label>
+                  <label className="block text-xs text-gray-400 mb-1.5">
+                    {t('auth.email')}
+                  </label>
                   <div className="relative">
                     <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                     <input
@@ -374,7 +382,7 @@ const AuthModal = () => {
                       type="email"
                       value={email}
                       onChange={e => setEmail(e.target.value)}
-                      placeholder="sizin@email.com"
+                      placeholder={t('auth.emailPlaceholder')}
                       disabled={loading}
                       autoComplete="email"
                       className="w-full bg-bg-primary border border-border rounded-lg pl-10 pr-3 py-2.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-accent-cyan/50 disabled:opacity-50"
@@ -383,14 +391,20 @@ const AuthModal = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">Parol</label>
+                  <label className="block text-xs text-gray-400 mb-1.5">
+                    {t('auth.password')}
+                  </label>
                   <div className="relative">
                     <Lock size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
-                      placeholder={isSignup ? 'Minimum 6 simvol' : 'Parolunuz'}
+                      placeholder={
+                        isSignup
+                          ? t('auth.passwordPlaceholder')
+                          : t('auth.passwordLoginPlaceholder')
+                      }
                       disabled={loading}
                       autoComplete={isSignup ? 'new-password' : 'current-password'}
                       className="w-full bg-bg-primary border border-border rounded-lg pl-10 pr-10 py-2.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-accent-cyan/50 disabled:opacity-50"
@@ -420,7 +434,7 @@ const AuthModal = () => {
                   {loading ? (
                     <Loader2 size={16} className="animate-spin" />
                   ) : (
-                    isSignup ? 'Hesab yarat' : 'Daxil ol'
+                    isSignup ? t('auth.submitSignup') : t('auth.submitSignin')
                   )}
                 </button>
               </form>
@@ -428,22 +442,22 @@ const AuthModal = () => {
               <div className="text-center mt-5 text-xs text-gray-400">
                 {isSignup ? (
                   <>
-                    Artıq hesabınız var?{' '}
+                    {t('auth.haveAccount')}{' '}
                     <button
                       onClick={() => switchMode('signin')}
                       className="text-accent-cyan hover:underline font-medium"
                     >
-                      Daxil ol
+                      {t('auth.goSignin')}
                     </button>
                   </>
                 ) : (
                   <>
-                    Hesabınız yoxdur?{' '}
+                    {t('auth.noAccount')}{' '}
                     <button
                       onClick={() => switchMode('signup')}
                       className="text-accent-cyan hover:underline font-medium"
                     >
-                      Qeydiyyat
+                      {t('auth.goSignup')}
                     </button>
                   </>
                 )}
@@ -452,9 +466,11 @@ const AuthModal = () => {
 
             <div className="px-6 pb-6 pt-2 text-center">
               <p className="text-[11px] text-gray-500">
-                Daxil olmaqla siz{' '}
-                <a href="#" className="text-accent-cyan hover:underline">İstifadə şərtlərini</a>{' '}
-                qəbul edirsiniz
+                {t('auth.terms')}{' '}
+                <a href="#" className="text-accent-cyan hover:underline">
+                  {t('auth.termsLink')}
+                </a>{' '}
+                {t('auth.termsEnd')}
               </p>
             </div>
           </>

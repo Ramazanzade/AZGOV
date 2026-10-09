@@ -7,11 +7,13 @@ import MapRenderer from '../renderers/MapRenderer';
 import TableRenderer from '../renderers/TableRenderer';
 import { useBatchFetch } from '../../hooks/useBatchFetch';
 import { DashboardConfig } from '../../config/dashboards';
+import { useLang } from '../../i18n/LanguageContext';
 
 interface Props { config: DashboardConfig }
 
 const DashboardTemplate = ({ config }: Props) => {
   const Icon = config.icon;
+  const { t } = useLang();                                  // ← YENİ
 
   // Stat kartları üçün URL-lər
   const statUrls = useMemo(
@@ -71,7 +73,7 @@ const DashboardTemplate = ({ config }: Props) => {
                 ) : chartData[config.charts[0].metadataUrl] ? (
                   <ChartRenderer data={chartData[config.charts[0].metadataUrl]!.data} />
                 ) : (
-                  <div className="text-gray-500 text-xs">Data yüklənmədi</div>
+                  <div className="text-gray-500 text-xs">{t('common.loadError')}</div>
                 )}
               </div>
             </div>
@@ -86,7 +88,7 @@ const DashboardTemplate = ({ config }: Props) => {
                 ) : chartData[config.charts[1].metadataUrl] ? (
                   <ChartRenderer data={chartData[config.charts[1].metadataUrl]!.data} />
                 ) : (
-                  <div className="text-gray-500 text-xs">Data yüklənmədi</div>
+                  <div className="text-gray-500 text-xs">{t('common.loadError')}</div>
                 )}
               </div>
             </div>
@@ -108,7 +110,7 @@ const DashboardTemplate = ({ config }: Props) => {
               ) : chartData[chart.metadataUrl] ? (
                 <ChartRenderer data={chartData[chart.metadataUrl]!.data} />
               ) : (
-                <div className="text-gray-500 text-xs">Data yüklənmədi</div>
+                <div className="text-gray-500 text-xs">{t('common.loadError')}</div>
               )}
             </div>
           </div>
@@ -128,7 +130,7 @@ const DashboardTemplate = ({ config }: Props) => {
               ) : mapData[config.map.metadataUrl] ? (
                 <TableRenderer data={mapData[config.map.metadataUrl]!.data} />
               ) : (
-                <div className="text-gray-500 text-xs p-2">Data yüklənmədi</div>
+                <div className="text-gray-500 text-xs p-2">{t('common.loadError')}</div>
               )}
             </div>
           </div>
@@ -137,7 +139,7 @@ const DashboardTemplate = ({ config }: Props) => {
         {/* Cədvəl (stat kartların xam datası) */}
         <div className="rounded-xl bg-bg-card border border-border overflow-hidden">
           <div className="p-4 border-b border-border flex items-center gap-2">
-            <span className="font-semibold text-sm">Son məlumatlar</span>
+            <span className="font-semibold text-sm">{t('common.latestData')}</span>
             <Info size={14} className="text-gray-500" />
           </div>
           <div className="p-4">

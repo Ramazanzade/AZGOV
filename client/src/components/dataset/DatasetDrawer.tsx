@@ -3,6 +3,7 @@ import { X, Download, ExternalLink, Loader2, AlertCircle } from 'lucide-react';
 import { DatasetSummary, FetchedDataset } from '../../types/dataset';
 import { fetchDatasetByUrl } from '../../services/api';
 import DynamicRenderer from './DynamicRenderer';
+import { useLang } from '../../i18n/LanguageContext';
 
 interface Props {
   dataset: DatasetSummary | null;
@@ -13,6 +14,7 @@ const DatasetDrawer = ({ dataset, onClose }: Props) => {
   const [data, setData] = useState<FetchedDataset | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useLang();
 
   useEffect(() => {
     if (!dataset) { setData(null); setError(null); return; }
@@ -52,7 +54,11 @@ const DatasetDrawer = ({ dataset, onClose }: Props) => {
                   <span className="px-1.5 py-0.5 rounded bg-bg-primary border border-border">
                     {dataset.format}
                   </span>
-                  {data && <span>• {data.meta.totalRecords} sətir</span>}
+                  {data && (
+                    <span>
+                      • {t('drawer.rowsCount', { count: data.meta.totalRecords })}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
@@ -62,7 +68,8 @@ const DatasetDrawer = ({ dataset, onClose }: Props) => {
                     target="_blank"
                     rel="noreferrer"
                     className="p-2 rounded-lg bg-bg-primary border border-border text-gray-400 hover:text-accent-cyan hover:border-accent-cyan/30"
-                    title="Faylı yüklə"
+                    title={t('drawer.downloadFile')}
+                    aria-label={t('drawer.downloadFile')}
                   >
                     <Download size={16} />
                   </a>
@@ -72,13 +79,16 @@ const DatasetDrawer = ({ dataset, onClose }: Props) => {
                   target="_blank"
                   rel="noreferrer"
                   className="p-2 rounded-lg bg-bg-primary border border-border text-gray-400 hover:text-accent-cyan hover:border-accent-cyan/30"
-                  title="API metadata"
+                  title={t('drawer.apiMetadata')}
+                  aria-label={t('drawer.apiMetadata')}
                 >
                   <ExternalLink size={16} />
                 </a>
                 <button
                   onClick={onClose}
                   className="p-2 rounded-lg bg-bg-primary border border-border text-gray-400 hover:text-red-400"
+                  title={t('common.close')}
+                  aria-label={t('common.close')}
                 >
                   <X size={16} />
                 </button>
@@ -90,7 +100,9 @@ const DatasetDrawer = ({ dataset, onClose }: Props) => {
               {loading && (
                 <div className="flex flex-col items-center justify-center py-20 gap-3">
                   <Loader2 size={28} className="text-accent-cyan animate-spin" />
-                  <span className="text-sm text-gray-400">Data yüklənir...</span>
+                  <span className="text-sm text-gray-400">
+                    {t('drawer.loadingData')}
+                  </span>
                 </div>
               )}
 
@@ -98,7 +110,7 @@ const DatasetDrawer = ({ dataset, onClose }: Props) => {
                 <div className="flex items-start gap-3 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
                   <AlertCircle size={18} />
                   <div>
-                    <div className="font-medium">Xəta baş verdi</div>
+                    <div className="font-medium">{t('drawer.errorTitle')}</div>
                     <div className="text-xs mt-1 text-red-300/80">{error}</div>
                   </div>
                 </div>

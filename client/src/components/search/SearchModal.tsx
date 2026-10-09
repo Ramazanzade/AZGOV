@@ -5,7 +5,7 @@ import {
   Building2, FolderTree, ArrowRight, Command
 } from 'lucide-react';
 import { useDatasets } from '../../hooks/useDatasets';
-import { niceName } from '../../utils/columnLabels';
+import { groupKey } from '../../utils/columnLabels';
 import { useLang } from '../../i18n/LanguageContext';
 
 interface Props {
@@ -29,7 +29,7 @@ const SearchModal = ({ open, onClose }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const { datasets } = useDatasets();
-const { t } = useLang();
+  const { t } = useLang();
 
   // Açılanda input focus
   useEffect(() => {
@@ -95,11 +95,9 @@ const { t } = useLang();
 
   const handleSelect = (r: Result) => {
     if (r.type === 'dataset') {
-      // Dataset səhifəsinə keç — dataset-i state-də ötür
       const ds = datasets.find(d => d.id === r.id);
       navigate(`/dataset/${r.id}`, { state: { dataset: ds } });
     } else if (r.type === 'org') {
-      // Təşkilat üzrə bütün dataset-lər — CategoryPage-ə filter ilə get
       navigate(`/dashboard/economy/transport?org=${encodeURIComponent(r.name)}`);
     } else {
       navigate(`/dashboard/${r.name}`);
@@ -143,13 +141,13 @@ const { t } = useLang();
         <div className="max-h-[60vh] overflow-y-auto">
           {!query && (
             <div className="px-4 py-8 text-center text-xs text-gray-500">
-             {t('search.startTyping')}
+              {t('search.startTyping')}
             </div>
           )}
 
           {query && results.length === 0 && (
             <div className="px-4 py-8 text-center text-xs text-gray-500">
-              "<span className="text-gray-300">{query}</span>" üçün nəticə tapılmadı
+              "<span className="text-gray-300">{query}</span>" {t('search.noResults')}
             </div>
           )}
 
@@ -181,13 +179,17 @@ const { t } = useLang();
                 {r.type === 'org' && (
                   <>
                     <div className="text-sm text-gray-200">{r.name}</div>
-                    <div className="text-[10px] text-gray-500">{r.count} dataset</div>
+                    <div className="text-[10px] text-gray-500">
+                      {r.count} {t('common.datasets')}
+                    </div>
                   </>
                 )}
                 {r.type === 'group' && (
                   <>
-                    <div className="text-sm text-gray-200">{niceName(r.name)}</div>
-                    <div className="text-[10px] text-gray-500">{r.count} dataset</div>
+                    <div className="text-sm text-gray-200">{t(groupKey(r.name))}</div>
+                    <div className="text-[10px] text-gray-500">
+                      {r.count} {t('common.datasets')}
+                    </div>
                   </>
                 )}
               </div>
@@ -199,15 +201,17 @@ const { t } = useLang();
 
         {/* Footer */}
         <div className="px-4 py-2 border-t border-border flex items-center justify-between text-[10px] text-gray-500">
-          <span>{results.length} nəticə</span>
+          <span>
+            {results.length} {t('search.results')}
+          </span>
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
               <kbd className="px-1.5 py-0.5 rounded bg-bg-primary border border-border">↵</kbd>
-              Aç
+              {t('search.open')}
             </span>
             <span className="flex items-center gap-1">
               <Command size={10} />K
-              Aç / Bağla
+              {t('search.openClose')}
             </span>
           </div>
         </div>
