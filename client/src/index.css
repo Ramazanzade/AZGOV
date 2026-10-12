@@ -74,3 +74,39 @@ body {
 [data-theme='light'] .leaflet-tile-pane {
   filter: brightness(1.05) saturate(0.95);
 }
+
+/* Selection rəngi */
+::selection {
+  background: rgba(34, 211, 238, 0.3);
+  color: #fff;
+}
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
+
+/* Focus visible */
+*:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Recharts tooltip daha gözəl */
+.recharts-default-tooltip {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 20px -8px rgba(0,0,0,0.6) !important;
+}
+
+/* Skeleton shimmer */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-card) 0%,
+    var(--bg-hover) 50%,
+    var(--bg-card) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+}
