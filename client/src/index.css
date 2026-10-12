@@ -26,6 +26,8 @@
   --scroll-track: #111827;
   --scroll-thumb: #2a3050;
   --scroll-thumb-hover: #3a4060;
+  --accent-green: #10b981;   /* ← YENİ */
+
 }
 
 /* ============ LIGHT ============ */
@@ -45,6 +47,8 @@
   --scroll-track: #e5e9f0;
   --scroll-thumb: #c5cdd9;
   --scroll-thumb-hover: #a3aebd;
+  --accent-green: #10b981;   /* ← YENİ */
+
 }
 
 body {
@@ -109,4 +113,237 @@ html { scroll-behavior: smooth; }
   );
   background-size: 1000px 100%;
   animation: shimmer 2s infinite linear;
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+}
+
+/* Body & əsas fonlar */
+[data-theme='light'] body {
+  background-color: #f5f7fb !important;
+  color: #1a1d29 !important;
+}
+
+/* Tailwind bg-* sinifləri */
+[data-theme='light'] .bg-bg-primary    { background-color: #f5f7fb !important; }
+[data-theme='light'] .bg-bg-secondary  { background-color: #ffffff !important; }
+[data-theme='light'] .bg-bg-card       { background-color: #ffffff !important; }
+[data-theme='light'] .bg-bg-hover      { background-color: #eef2f9 !important; }
+
+/* Tailwind text-gray-* sinifləri */
+[data-theme='light'] .text-gray-50,
+[data-theme='light'] .text-gray-100    { color: #1a1d29 !important; }
+[data-theme='light'] .text-gray-200,
+[data-theme='light'] .text-gray-300    { color: #2e3440 !important; }
+[data-theme='light'] .text-gray-400    { color: #5a6470 !important; }
+[data-theme='light'] .text-gray-500    { color: #6b7280 !important; }
+[data-theme='light'] .text-gray-600,
+[data-theme='light'] .text-gray-700    { color: #4b5563 !important; }
+
+/* Border */
+[data-theme='light'] .border-border    { border-color: #dce1eb !important; }
+[data-theme='light'] .border-border\/50 { border-color: rgba(220, 225, 235, 0.5) !important; }
+
+/* Gradient arxa fonlar (stat kartlar) — light üçün yumşaq */
+[data-theme='light'] .bg-gradient-to-br {
+  filter: brightness(0.98) saturate(1.1);
+}
+
+/* Accent rəngləri light üçün daha tünd */
+[data-theme='light'] .text-accent-cyan   { color: #0891b2 !important; }
+[data-theme='light'] .text-accent-purple { color: #7c3aed !important; }
+[data-theme='light'] .text-accent-pink   { color: #db2777 !important; }
+[data-theme='light'] .text-accent-blue   { color: #2563eb !important; }
+
+/* Recharts grid light üçün */
+[data-theme='light'] .recharts-cartesian-grid line {
+  stroke: #e5e9f0 !important;
+}
+
+/* Sidebar light */
+[data-theme='light'] aside {
+  background-color: #ffffff !important;
+  border-color: #dce1eb !important;
+}
+
+/* Header light */
+[data-theme='light'] header {
+  background-color: #ffffff !important;
+  border-color: #dce1eb !important;
+}
+
+/* Input light */
+[data-theme='light'] input,
+[data-theme='light'] textarea,
+[data-theme='light'] select {
+  background-color: #ffffff !important;
+  color: #1a1d29 !important;
+  border-color: #dce1eb !important;
+}
+
+/* Tooltip light */
+[data-theme='light'] .recharts-default-tooltip {
+  background: #ffffff !important;
+  border: 1px solid #dce1eb !important;
+  color: #1a1d29 !important;
+}
+
+/* ═══════════════════════════════════════════════════
+   HOVER STATES — LIGHT THEME
+   ═══════════════════════════════════════════════════ */
+
+/* Text hover — ağ yerinə tünd boz */
+[data-theme='light'] .hover\:text-white:hover,
+[data-theme='light'] .hover\:text-gray-50:hover,
+[data-theme='light'] .hover\:text-gray-100:hover,
+[data-theme='light'] .hover\:text-gray-200:hover {
+  color: #1a1d29 !important;
+}
+
+[data-theme='light'] .hover\:text-gray-300:hover,
+[data-theme='light'] .hover\:text-gray-400:hover {
+  color: #374151 !important;
+}
+
+[data-theme='light'] .hover\:text-gray-500:hover {
+  color: #4b5563 !important;
+}
+
+/* Accent hover — light üçün tünd variantlar */
+[data-theme='light'] .hover\:text-accent-cyan:hover   { color: #0891b2 !important; }
+[data-theme='light'] .hover\:text-accent-purple:hover { color: #7c3aed !important; }
+[data-theme='light'] .hover\:text-accent-pink:hover   { color: #db2777 !important; }
+[data-theme='light'] .hover\:text-accent-blue:hover   { color: #2563eb !important; }
+
+/* BG hover — açıq boz */
+[data-theme='light'] .hover\:bg-bg-primary:hover     { background-color: #f5f7fb !important; }
+[data-theme='light'] .hover\:bg-bg-secondary:hover   { background-color: #f0f3f9 !important; }
+[data-theme='light'] .hover\:bg-bg-card:hover        { background-color: #f0f3f9 !important; }
+[data-theme='light'] .hover\:bg-bg-hover:hover       { background-color: #eef2f9 !important; }
+
+/* Opacity variantları */
+[data-theme='light'] .hover\:bg-bg-hover\/50:hover   { background-color: rgba(238, 242, 249, 0.5) !important; }
+[data-theme='light'] .hover\:bg-bg-hover\/60:hover   { background-color: rgba(238, 242, 249, 0.6) !important; }
+[data-theme='light'] .hover\:bg-bg-hover\/80:hover   { background-color: rgba(238, 242, 249, 0.8) !important; }
+
+/* Border hover */
+[data-theme='light'] .hover\:border-border:hover         { border-color: #c5cdd9 !important; }
+[data-theme='light'] .hover\:border-accent-cyan\/40:hover { border-color: rgba(8, 145, 178, 0.4) !important; }
+[data-theme='light'] .hover\:border-accent-cyan\/50:hover { border-color: rgba(8, 145, 178, 0.5) !important; }
+
+/* ═══════════════════════════════════════════════════
+   TEXT-WHITE ümumi override (light-də ağ olmasın)
+   ═══════════════════════════════════════════════════ */
+[data-theme='light'] .text-white   { color: #1a1d29 !important; }
+
+/* ═══════════════════════════════════════════════════
+   Sidebar nav item-ları üçün xüsusi
+   ═══════════════════════════════════════════════════ */
+[data-theme='light'] nav a,
+[data-theme='light'] aside a,
+[data-theme='light'] aside button {
+  color: #4b5563;
+}
+
+[data-theme='light'] nav a:hover,
+[data-theme='light'] aside a:hover,
+[data-theme='light'] aside button:hover {
+  background-color: #eef2f9 !important;
+  color: #1a1d29 !important;
+}
+
+/* Aktiv element */
+[data-theme='light'] aside .text-accent-cyan,
+[data-theme='light'] nav .text-accent-cyan {
+  color: #0891b2 !important;
+}
+
+/* ═══════════════════════════════════════════════════
+   Group hover — kartlarda expand ikonu üçün
+   ═══════════════════════════════════════════════════ */
+[data-theme='light'] .group:hover .group-hover\:text-white,
+[data-theme='light'] .group\/chart:hover .group-hover\/chart\:text-white,
+[data-theme='light'] .group\/table:hover .group-hover\/table\:text-white,
+[data-theme='light'] .group\/pie:hover .group-hover\/pie\:text-white,
+[data-theme='light'] .group\/bar:hover .group-hover\/bar\:text-white {
+  color: #1a1d29 !important;
+}
+
+/* ═══════════════════════════════════════════════════
+   Opacity background-lar (light-də tünd görünməsin)
+   ═══════════════════════════════════════════════════ */
+[data-theme='light'] .bg-bg-primary\/80  { background-color: rgba(245, 247, 251, 0.8) !important; }
+[data-theme='light'] .bg-bg-primary\/50  { background-color: rgba(245, 247, 251, 0.5) !important; }
+[data-theme='light'] .bg-bg-card\/60     { background-color: rgba(255, 255, 255, 0.6) !important; }
+[data-theme='light'] .bg-bg-secondary\/30 { background-color: rgba(240, 243, 249, 0.3) !important; }
+
+/* ═══════════════════════════════════════════════════
+   Select/dropdown/option light theme
+   ═══════════════════════════════════════════════════ */
+[data-theme='light'] select option {
+  background-color: #ffffff !important;
+  color: #1a1d29 !important;
+}
+/* ═══════════════════════════════════════════════════
+   CƏDVƏL (table) — LIGHT THEME
+   Daha tünd, oxunaqlı mətn
+   ═══════════════════════════════════════════════════ */
+
+/* Cədvəl body mətni — əsas problem buradadır */
+[data-theme='light'] table tbody td {
+  color: #2e3440 !important;
+}
+
+/* Cədvəl başlığı */
+[data-theme='light'] table thead th {
+  color: #1a1d29 !important;
+  background-color: #f5f7fb !important;
+  border-bottom-color: #dce1eb !important;
+}
+
+/* Sətir arası border */
+[data-theme='light'] table tbody td {
+  border-bottom-color: #e8ecf2 !important;
+}
+
+/* Zebra (cüt sətirlər) */
+[data-theme='light'] table tbody tr:nth-child(even) {
+  background-color: #fafbfd !important;
+}
+
+/* Hover sətri */
+[data-theme='light'] table tbody tr:hover {
+  background-color: #eef2f9 !important;
+}
+
+/* ═══════════════════════════════════════════════════
+   text-gray-400/500/600 — cədvəl daxilində daha tünd
+   ═══════════════════════════════════════════════════ */
+[data-theme='light'] table .text-gray-400,
+[data-theme='light'] table .text-gray-500 {
+  color: #374151 !important;
+}
+
+[data-theme='light'] table .text-gray-300 {
+  color: #1f2937 !important;
+}
+
+[data-theme='light'] table .text-gray-200 {
+  color: #111827 !important;
+}
+
+/* ═══════════════════════════════════════════════════
+   UMUMİ YAXŞILAŞDIRMA — light themeda text-gray-400 
+   çox açıq idi, onu tündləşdir
+   ═══════════════════════════════════════════════════ */
+[data-theme='light'] .text-gray-400 { color: #4b5563 !important; }
+[data-theme='light'] .text-gray-500 { color: #374151 !important; }
+
+/* Başlıqlar */
+[data-theme='light'] h1,
+[data-theme='light'] h2,
+[data-theme='light'] h3,
+[data-theme='light'] h4 {
+  color: #0f172a !important;
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Download, FileText, FileJson, Image, Loader2, ChevronDown, Lock } from 'lucide-react';
-import { exportCSV, exportJSON, exportPNG, buildFilename } from '../../utils/exporters';
+import { exportCSV, exportJSON, exportAllCharts, buildFilename } from '../../utils/exporters';
 import { useAuth } from '../../context/AuthContext';
 import { useAuthModal } from '../../context/AuthModalContext';
 import { useLang } from '../../i18n/LanguageContext';
@@ -28,21 +28,21 @@ const ExportButtons = ({ title, data, chartRef }: Props) => {
     setOpen(v => !v);
   };
 
-  const handle = async (type: 'csv' | 'json' | 'png') => {
-    setBusy(type);
-    try {
-      if (type === 'csv' && Array.isArray(data)) {
-        exportCSV(data, buildFilename(title, 'csv'));
-      } else if (type === 'json' && data) {
-        exportJSON(data, buildFilename(title, 'json'));
-      } else if (type === 'png' && chartRef?.current) {
-        await exportPNG(chartRef.current, buildFilename(title, 'png'));
-      }
-    } finally {
-      setTimeout(() => setBusy(null), 300);
-      setOpen(false);
+const handle = async (type: 'csv' | 'json' | 'png') => {
+  setBusy(type);
+  try {
+    if (type === 'csv' && Array.isArray(data)) {
+      exportCSV(data, buildFilename(title, 'csv'));
+    } else if (type === 'json' && data) {
+      exportJSON(data, buildFilename(title, 'json'));
+    } else if (type === 'png') {
+      await exportAllCharts(title);   // ← BÜTÜN chart-ları yüklə
     }
-  };
+  } finally {
+    setTimeout(() => setBusy(null), 300);
+    setOpen(false);
+  }
+};
 
   return (
     <div className="relative">
@@ -80,11 +80,11 @@ const ExportButtons = ({ title, data, chartRef }: Props) => {
               disabled={!data}
               onClick={() => handle('json')}
             />
-            <MenuItem
+          <MenuItem
               icon={Image}
-              label={t('export.png')}
+              label="Bütün chart-lar (PNG)"
               busy={busy === 'png'}
-              disabled={!chartRef?.current}
+              disabled={false}
               onClick={() => handle('png')}
             />
           </div>

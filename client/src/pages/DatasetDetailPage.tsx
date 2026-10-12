@@ -29,12 +29,10 @@ const COLORS = ['#22d3ee', '#a855f7', '#ec4899', '#3b82f6', '#10b981', '#f59e0b'
 
 type AggType = 'sum' | 'avg' | 'max' | 'min' | 'count';
 
+type ChartType = 'line' | 'bar' | 'pie' | 'table';
 type Expanded =
   | { kind: 'stat'; agg: AggType }
-  | { kind: 'multiseries' }
-  | { kind: 'pie' }
-  | { kind: 'bar' }
-  | { kind: 'table' }
+  | { kind: 'chart'; type: ChartType }
   | null;
 
 const fixText = (s: string) => s.replace(/(?<=\p{L})\?(?=\p{L})/gu, 'ə');
@@ -186,24 +184,27 @@ const DatasetDetailPage = () => {
   }, [fixedData]);
 
   // Modal başlığı
-  const modalTitle = (() => {
-    if (!expanded) return '';
-    if (expanded.kind === 'stat') {
-      const map: Record<AggType, string> = {
-        sum:   t('detail.sum'),
-        avg:   t('detail.avg'),
-        max:   t('detail.max'),
-        min:   t('detail.min'),
-        count: t('detail.count'),
-      };
-      return `${map[expanded.agg]} — ${niceName(analysis?.numericKey || '')}`;
-    }
-    if (expanded.kind === 'multiseries') return t('detail.periodDynamics1');
-    if (expanded.kind === 'pie')         return t('detail.distribution');
-    if (expanded.kind === 'bar')         return t('detail.top10');
-    if (expanded.kind === 'table')       return t('detail.rawData');
-    return '';
-  })();
+ const modalTitle = (() => {
+  if (!expanded) return '';
+  if (expanded.kind === 'stat') {
+    const map: Record<AggType, string> = {
+      sum: t('detail.sum'), avg: t('detail.avg'),
+      max: t('detail.max'), min: t('detail.min'),
+      count: t('detail.count'),
+    };
+    return `${map[expanded.agg]} — ${niceName(analysis?.numericKey || '')}`;
+  }
+  if (expanded.kind === 'chart') {
+    const map: Record<ChartType, string> = {
+      line:  'Dinamika',
+      bar:   'Top 10',
+      pie:   'Bölgü',
+      table: 'Xam data',
+    };
+    return map[expanded.type];
+  }
+  return '';
+})();
 
   if (!dataset) {
     return (
@@ -364,7 +365,9 @@ const DatasetDetailPage = () => {
             {analysis.multiSeries && analysis.multiSeries.series.length > 1 && (
               <div
                 ref={chartRef}
-                onClick={() => setExpanded({ kind: 'multiseries' })}
+                data-export-chart
+  data-export-title="dinamika"
+                onClick={() => setExpanded({kind: 'chart', type: 'line'  })}
                 className="rounded-xl bg-bg-card border border-border p-4 mb-5 cursor-pointer
                            hover:border-accent-cyan/40 transition-colors group/chart relative"
               >
@@ -393,7 +396,9 @@ const DatasetDetailPage = () => {
             {!analysis.multiSeries && analysis.lineData.length > 1 && (
               <div
                 ref={chartRef}
-                onClick={() => setExpanded({ kind: 'multiseries' })}
+                 data-export-chart
+  data-export-title="dinamika"
+                onClick={() => setExpanded({kind: 'chart', type: 'line'  })}
                 className="rounded-xl bg-bg-card border border-border p-4 mb-5 cursor-pointer
                            hover:border-accent-cyan/40 transition-colors group/chart relative"
               >
@@ -426,7 +431,9 @@ const DatasetDetailPage = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
               {analysis.pieData.length > 1 && (
                 <div
-                  onClick={() => setExpanded({ kind: 'pie' })}
+                  data-export-chart
+  data-export-title="bolgu"
+                  onClick={() => setExpanded({ kind: 'chart', type: 'pie'})}
                   className="rounded-xl bg-bg-card border border-border p-4 cursor-pointer
                              hover:border-accent-purple/40 transition-colors group/pie relative"
                 >
@@ -455,7 +462,9 @@ const DatasetDetailPage = () => {
               )}
               {analysis.barData.length > 1 && (
                 <div
-                  onClick={() => setExpanded({ kind: 'bar' })}
+                  data-export-chart
+  data-export-title="top10"
+                  onClick={() => setExpanded({kind: 'chart', type: 'bar'})}
                   className={`rounded-xl bg-bg-card border border-border p-4 cursor-pointer
                              hover:border-accent-pink/40 transition-colors group/bar relative
                              ${analysis.pieData.length > 1 ? 'lg:col-span-2' : 'lg:col-span-3'}`}
@@ -515,7 +524,7 @@ const DatasetDetailPage = () => {
 
             {/* Table */}
             <div
-              onClick={() => setExpanded({ kind: 'table' })}
+              onClick={() => setExpanded({ kind: 'chart', type: 'table'  })}
               className="rounded-xl bg-bg-card border border-border overflow-hidden
                          cursor-pointer hover:border-accent-cyan/40 transition-colors group/table relative"
             >
@@ -583,102 +592,268 @@ const DatasetDetailPage = () => {
       </aside>
 
       {/* ═══════════════════ MODAL ═══════════════════ */}
-      <ExpandableModal
-        open={expanded !== null}
-        onClose={() => setExpanded(null)}
-        title={modalTitle}
-        subtitle={dataset.title}
-      >
-        {/* Stat card modal */}
-        {expanded?.kind === 'stat' && analysis?.stats && (
-          <div className="h-full flex flex-col gap-4">
-            <div className="text-center py-6 border-b border-border">
-              <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-                {modalTitle}
+<ExpandableModal
+  open={expanded !== null}
+  onClose={() => setExpanded(null)}
+  title={modalTitle}
+  subtitle={dataset.title}
+>
+  {/* ══════════ STAT modal (dəyişməz) ══════════ */}
+  {expanded?.kind === 'stat' && analysis?.stats && (
+    <div className="h-full flex flex-col gap-4">
+      {/* 4 kart */}
+      <div className="grid grid-cols-4 gap-3">
+        {(['sum', 'avg', 'max', 'min'] as AggType[]).map(agg => {
+          const val = agg === 'sum' ? analysis.stats!.sum
+                    : agg === 'avg' ? analysis.stats!.avg
+                    : agg === 'max' ? analysis.stats!.max
+                                    : analysis.stats!.min;
+          const labels: Record<string, string> = {
+            sum: t('detail.sum'), avg: t('detail.avg'),
+            max: t('detail.max'), min: t('detail.min'),
+          };
+          const colors: Record<string, string> = {
+            sum: 'text-accent-purple border-accent-purple/30 bg-accent-purple/5',
+            avg: 'text-accent-cyan border-accent-cyan/30 bg-accent-cyan/5',
+            max: 'text-accent-pink border-accent-pink/30 bg-accent-pink/5',
+            min: 'text-accent-blue border-accent-blue/30 bg-accent-blue/5',
+          };
+          const isActive = expanded.agg === agg;
+          return (
+            <button
+              key={agg}
+              onClick={() => setExpanded({ kind: 'stat', agg })}
+              className={`rounded-xl border p-4 text-left transition-all hover:-translate-y-0.5
+                          ${colors[agg]}
+                          ${isActive ? 'ring-2 ring-accent-cyan/40 scale-[1.02]' : 'opacity-70'}`}
+            >
+              <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">
+                {labels[agg]}
               </div>
-              <div className="text-5xl font-bold text-accent-cyan">
-                {fmtNum(
-                  expanded.agg === 'sum'   ? analysis.stats.sum :
-                  expanded.agg === 'avg'   ? analysis.stats.avg :
-                  expanded.agg === 'max'   ? analysis.stats.max :
-                  expanded.agg === 'min'   ? analysis.stats.min :
-                                             analysis.stats.count
-                )}
+              <div className={`text-2xl font-bold ${colors[agg].split(' ')[0]}`}>
+                {fmtNum(val)}
               </div>
-              <div className="text-xs text-gray-500 mt-3">
-                {analysis.stats.count} qeyd üzrə hesablanıb
-              </div>
-            </div>
-            <div className="flex-1 min-h-0 overflow-hidden">
-              <div className="text-sm font-semibold mb-2">Xam data</div>
-              <TableRenderer data={Array.isArray(fixedData?.data) ? fixedData.data : []} />
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Statistika + Cədvəl */}
+      <div className="rounded-xl bg-bg-secondary border border-border p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Activity size={14} className="text-accent-cyan" />
+          <span className="text-sm font-semibold">Statistika — {niceName(analysis.numericKey)}</span>
+        </div>
+        <div className="grid grid-cols-4 gap-4 text-xs">
+          <div>
+            <div className="text-gray-500 mb-1">Qeyd sayı</div>
+            <div className="text-gray-200 font-medium">{analysis.stats.count}</div>
+          </div>
+          <div>
+            <div className="text-gray-500 mb-1">Rekord</div>
+            <div className="text-gray-200 font-medium">{analysis.totalRows}</div>
+          </div>
+          <div>
+            <div className="text-gray-500 mb-1">Sütunlar</div>
+            <div className="text-gray-200 font-medium">{analysis.cols.keys.length}</div>
+          </div>
+          <div>
+            <div className="text-gray-500 mb-1">Zaman sütunu</div>
+            <div className="text-gray-200 font-medium truncate">
+              {analysis.timeKey ? niceName(analysis.timeKey) : '—'}
             </div>
           </div>
-        )}
+        </div>
+      </div>
 
-        {/* Multi-series modal */}
-        {expanded?.kind === 'multiseries' && analysis?.multiSeries && (
-          <div className="h-full">
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+        <div className="flex items-center gap-2 mb-2">
+          <FileText size={14} className="text-gray-500" />
+          <span className="text-sm font-semibold">Xam data</span>
+        </div>
+        <div className="flex-1 min-h-0">
+          <TableRenderer data={Array.isArray(fixedData?.data) ? fixedData.data : []} />
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* ══════════ CHART modal — tablarla ══════════ */}
+  {expanded?.kind === 'chart' && analysis && (
+    <div className="h-full flex flex-col">
+      {/* Tabs */}
+      <div className="flex items-center gap-1 mb-4 p-1 bg-bg-secondary border border-border rounded-xl w-fit shrink-0">
+        {([
+          { type: 'line',  icon: TrendingUp, label: 'Dinamika' },
+          { type: 'bar',   icon: BarChart3,  label: 'Top 10' },
+          { type: 'pie',   icon: PieIcon,    label: 'Bölgü' },
+          { type: 'table', icon: FileText,   label: 'Cədvəl' },
+        ] as const).map(({ type, icon: Icon, label }) => {
+          const isActive = expanded.type === type;
+          return (
+            <button
+              key={type}
+              onClick={() => setExpanded({ kind: 'chart', type })}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all
+                          ${isActive
+                            ? 'bg-accent-cyan/15 text-accent-cyan shadow-sm'
+                            : 'text-gray-400 hover:text-white hover:bg-bg-hover'}`}
+            >
+              <Icon size={12} />
+              {label}
+            </button>
+          );
+        })}
+
+        {/* Sağda statistika mini badge */}
+        <div className="ml-4 pl-4 border-l border-border flex items-center gap-3 text-[10px] text-gray-500">
+          <span>📊 {analysis.totalRows} sətir</span>
+          {analysis.timeKey && <span>📅 {niceName(analysis.timeKey)}</span>}
+        </div>
+      </div>
+
+      {/* Content — switch */}
+      <div className="flex-1 min-h-0">
+
+        {/* ─── LINE ─── */}
+        {expanded.type === 'line' && (
+          analysis.multiSeries && analysis.multiSeries.series.length > 1 ? (
             <MultiSeriesLineChart result={analysis.multiSeries} />
-          </div>
-        )}
-
-        {/* Fallback single-line modal */}
-        {expanded?.kind === 'multiseries' && !analysis?.multiSeries && analysis && (
-          <div className="h-full">
+          ) : analysis.lineData.length > 1 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={analysis.lineData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#2a3050" />
                 <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
                 <YAxis stroke="#6b7280" fontSize={12} tickFormatter={fmtNum} />
-                <Tooltip contentStyle={{ background: '#1a1f35', border: '1px solid #2a3050', borderRadius: 8, fontSize: 12 }} />
-                <Line type="monotone" dataKey="value" stroke="#22d3ee" strokeWidth={2} dot={{ r: 3 }} />
+                <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }} />
+                <Line type="monotone" dataKey="value" stroke="#22d3ee" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
               </LineChart>
             </ResponsiveContainer>
-          </div>
+          ) : (
+            <EmptyState icon={TrendingUp} text="Zaman seriyası üçün məlumat yoxdur" />
+          )
         )}
 
-        {/* Pie modal */}
-        {expanded?.kind === 'pie' && analysis && (
-          <div className="h-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={analysis.pieData} dataKey="value" nameKey="name"
-                     cx="50%" cy="50%" innerRadius={80} outerRadius={150}
-                     label={{ fontSize: 12, fill: '#9ca3af' }}>
-                  {analysis.pieData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ background: '#1a1f35', border: '1px solid #2a3050', borderRadius: 8 }} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+        {/* ─── BAR ─── */}
+        {expanded.type === 'bar' && (
+          analysis.barData.length > 1 ? (
+            <div className="h-full flex flex-col gap-4">
+              {/* 3 stat kartı */}
+              <div className="grid grid-cols-3 gap-3 shrink-0">
+                <div className="rounded-xl bg-bg-secondary border border-border p-3">
+                  <div className="text-[10px] uppercase text-gray-500 mb-1">🥇 Ən yüksək</div>
+                  <div className="text-sm font-semibold text-accent-pink truncate" title={analysis.barData[0]?.name}>
+                    {analysis.barData[0]?.name}
+                  </div>
+                  <div className="text-lg font-bold text-accent-pink">
+                    {fmtNum(analysis.barData[0]?.value || 0)}
+                  </div>
+                </div>
+                <div className="rounded-xl bg-bg-secondary border border-border p-3">
+                  <div className="text-[10px] uppercase text-gray-500 mb-1">Σ Toplam</div>
+                  <div className="text-lg font-bold text-accent-purple">
+                    {fmtNum(analysis.barData.reduce((s, d) => s + d.value, 0))}
+                  </div>
+                </div>
+                <div className="rounded-xl bg-bg-secondary border border-border p-3">
+                  <div className="text-[10px] uppercase text-gray-500 mb-1">∅ Ortalama</div>
+                  <div className="text-lg font-bold text-accent-cyan">
+                    {fmtNum(analysis.barData.reduce((s, d) => s + d.value, 0) / (analysis.barData.length || 1))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Chart */}
+              <div className="flex-1 min-h-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={analysis.barData} layout="vertical" margin={{ top: 10, right: 70, bottom: 10, left: 10 }}>
+                    <defs>
+                      <linearGradient id="barGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#a855f7" stopOpacity={0.5} />
+                        <stop offset="100%" stopColor="#a855f7" stopOpacity={1} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#2a3050" horizontal={false} />
+                    <XAxis type="number" stroke="#6b7280" fontSize={11} tickFormatter={fmtNum} />
+                    <YAxis type="category" dataKey="name" stroke="#9ca3af" fontSize={11} width={180} />
+                    <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }} formatter={(v: any) => fmtNum(Number(v))} />
+                    <Bar dataKey="value" fill="url(#barGrad)" radius={[0, 6, 6, 0]}
+                         label={{ position: 'right', fill: '#9ca3af', fontSize: 11, formatter: (v: any) => fmtNum(Number(v)) }} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          ) : (
+            <EmptyState icon={BarChart3} text="Bar chart üçün məlumat yoxdur" />
+          )
         )}
 
-        {/* Bar modal */}
-        {expanded?.kind === 'bar' && analysis && (
-          <div className="h-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analysis.barData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#2a3050" />
-                <XAxis type="number" stroke="#6b7280" tickFormatter={fmtNum} />
-                <YAxis type="category" dataKey="name" stroke="#6b7280" width={200} />
-                <Tooltip contentStyle={{ background: '#1a1f35', border: '1px solid #2a3050', borderRadius: 8 }} />
-                <Bar dataKey="value" fill="#a855f7" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        {/* ─── PIE ─── */}
+        {expanded.type === 'pie' && (
+          analysis.pieData.length > 1 ? (
+            <div className="h-full grid grid-cols-5 gap-6">
+              <div className="col-span-3 flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={analysis.pieData} dataKey="value" nameKey="name"
+                         cx="50%" cy="50%" innerRadius="42%" outerRadius="72%"
+                         paddingAngle={2} stroke="none"
+                         label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                         labelLine={{ stroke: '#6b7280', strokeWidth: 1 }}>
+                      {analysis.pieData.map((_, i) => (
+                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }} formatter={(v: any) => fmtNum(Number(v))} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="col-span-2 flex flex-col gap-3 overflow-hidden">
+                <div className="rounded-xl bg-bg-secondary border border-border p-4 shrink-0">
+                  <div className="text-[10px] uppercase text-gray-500 mb-1">Σ Ümumi</div>
+                  <div className="text-3xl font-bold text-accent-purple">
+                    {fmtNum(analysis.pieData.reduce((s, d) => s + d.value, 0))}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {analysis.pieData.length} kateqoriya üzrə
+                  </div>
+                </div>
+
+                <div className="flex-1 min-h-0 rounded-xl bg-bg-secondary border border-border overflow-hidden flex flex-col">
+                  <div className="px-4 py-2 border-b border-border text-xs font-semibold text-gray-300 shrink-0">
+                    Bölgü cədvəli
+                  </div>
+                  <div className="flex-1 overflow-y-auto">
+                    {analysis.pieData.map((d, i) => {
+                      const total = analysis.pieData.reduce((s, x) => s + x.value, 0);
+                      const pct = total ? (d.value / total) * 100 : 0;
+                      return (
+                        <div key={i} className="flex items-center gap-3 px-4 py-2 hover:bg-bg-hover transition-colors">
+                          <div className="w-3 h-3 rounded-sm shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
+                          <div className="flex-1 text-xs text-gray-300 truncate" title={d.name}>{d.name}</div>
+                          <div className="text-xs font-mono text-gray-400">{fmtNum(d.value)}</div>
+                          <div className="text-[10px] text-gray-500 w-10 text-right">{pct.toFixed(1)}%</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <EmptyState icon={PieIcon} text="Bölgü üçün məlumat yoxdur" />
+          )
         )}
 
-        {/* Table modal */}
-        {expanded?.kind === 'table' && (
-          <div className="h-full">
-            <TableRenderer data={Array.isArray(fixedData?.data) ? fixedData.data : []} />
-          </div>
+        {/* ─── TABLE ─── */}
+        {expanded.type === 'table' && (
+          <TableRenderer data={Array.isArray(fixedData?.data) ? fixedData.data : []} />
         )}
-      </ExpandableModal>
+      </div>
+    </div>
+  )}
+</ExpandableModal>
     </div>
   );
 };
@@ -733,6 +908,14 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
   <div className="mb-3">
     <div className="text-[10px] uppercase tracking-wide text-gray-500 mb-1">{label}</div>
     <div className="text-xs text-gray-200 break-words">{value}</div>
+  </div>
+);
+const EmptyState = ({ icon: Icon, text }: { icon: any; text: string }) => (
+  <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3">
+    <div className="w-12 h-12 rounded-full bg-bg-secondary border border-border flex items-center justify-center">
+      <Icon size={20} className="opacity-40" />
+    </div>
+    <div className="text-sm">{text}</div>
   </div>
 );
 
