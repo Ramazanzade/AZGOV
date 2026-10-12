@@ -155,11 +155,14 @@ const DashboardTemplate = ({ config }: Props) => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {config.statCards.map((cfg, i) => (
             <StatCard
-              key={cfg.id}
-              config={cfg}
-              dataset={statData[cfg.metadataUrl] || null}
-              loading={statLoading}
-              onExpand={() => setExpanded({ kind: 'stat', index: i })}
+               key={cfg.id}
+  config={cfg}
+  dataset={statData[cfg.metadataUrl] || null}
+  loading={statLoading}
+  onExpand={() => {
+    console.log('🎯 KLIK İŞLƏDİ — index:', i);
+    setExpanded({ kind: 'stat', index: i });
+  }}
             />
           ))}
         </div>

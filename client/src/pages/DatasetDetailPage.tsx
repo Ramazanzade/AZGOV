@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, Download, ExternalLink, Loader2, AlertCircle,
-  Lock , TrendingUp, TrendingDown, PieChart as PieIcon, BarChart3,
+  Maximize2, TrendingUp, TrendingDown, PieChart as PieIcon, BarChart3,
   MapPin, FileText, Info, Hash, Activity
 } from 'lucide-react';
 import {
@@ -16,6 +16,7 @@ import TableRenderer from '../components/renderers/TableRenderer';
 import MapRenderer from '../components/renderers/MapRenderer';
 import MultiSeriesLineChart from '../components/renderers/MultiSeriesLineChart';
 import ExportButtons from '../components/ui/ExportButtons';
+import ExpandableModal from '../components/ui/ExpandableModal';   // ← YENİ
 import { niceName } from '../utils/columnLabels';
 import { buildMultiSeries } from '../utils/chartHelpers';
 import { detectGeoPoints } from '../utils/geoHelpers';
@@ -23,54 +24,42 @@ import MarkerMap from '../components/renderers/MarkerMap';
 import { useLang } from '../i18n/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useAuthModal } from '../context/AuthModalContext';
+
 const COLORS = ['#22d3ee', '#a855f7', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e'];
 
 type AggType = 'sum' | 'avg' | 'max' | 'min' | 'count';
 
-// ---------- Encoding bərpası ----------
-// Yalnız hərflər arasındakı "?" → "ə" (cümlə sonundakı sual işarələrinə toxunmur)
+type Expanded =
+  | { kind: 'stat'; agg: AggType }
+  | { kind: 'multiseries' }
+  | { kind: 'pie' }
+  | { kind: 'bar' }
+  | { kind: 'table' }
+  | null;
+
 const fixText = (s: string) => s.replace(/(?<=\p{L})\?(?=\p{L})/gu, 'ə');
 const ID_LIKE_KEYS = /^(s\/n|s_n|sn|no|#|id|index|sıra|sira|nömrə|nomre)$/i;
 
-// ---------- Sütun tanıma ----------
 const detectColumns = (data: any[]) => {
   if (!Array.isArray(data) || data.length === 0) return null;
-
   const sample = data.slice(0, 20);
   const keys = Object.keys(data[0]);
-
   const numeric: string[] = [];
   const categorical: string[] = [];
   const dates: string[] = [];
 
   keys.forEach(k => {
-    // ID/indeks sütunlarını tamamilə atla
     if (ID_LIKE_KEYS.test(k.trim())) return;
-
-    let numericHits = 0;
-    let dateHits = 0;
-    let textHits = 0;
-
+    let numericHits = 0, dateHits = 0, textHits = 0;
     sample.forEach(row => {
       const raw = String(row[k] ?? '').trim();
       if (raw === '') return;
-
-      if (/^\d{4}(-\d{1,2}(-\d{1,2})?)?$/.test(raw)) {
-        dateHits++;
-        return;
-      }
-
+      if (/^\d{4}(-\d{1,2}(-\d{1,2})?)?$/.test(raw)) { dateHits++; return; }
       const cleaned = raw.replace(/\s/g, '').replace(/,/g, '.');
-      if (/^[-+]?\d*\.?\d+$/.test(cleaned)) {
-        numericHits++;
-      } else {
-        textHits++;
-      }
+      if (/^[-+]?\d*\.?\d+$/.test(cleaned)) numericHits++; else textHits++;
     });
-
     const total = numericHits + dateHits + textHits;
     if (total === 0) return;
-
     if (dateHits / total > 0.6) dates.push(k);
     else if (numericHits / total > 0.7) numeric.push(k);
     else categorical.push(k);
@@ -85,12 +74,10 @@ const computeStats = (data: any[], numericKey?: string) => {
     .map(r => Number(String(r[numericKey] ?? '').replace(/[^\d.-]/g, '')))
     .filter(n => !isNaN(n));
   if (nums.length === 0) return null;
-
   const sum = nums.reduce((a, b) => a + b, 0);
   const avg = sum / nums.length;
   const max = Math.max(...nums);
   const min = Math.min(...nums);
-
   return { sum, avg, max, min, count: nums.length };
 };
 
@@ -102,7 +89,6 @@ const fmtNum = (n: number) => {
   return n.toFixed(2);
 };
 
-// ---------- Səhifə ----------
 const DatasetDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { datasets } = useDatasets();
@@ -111,9 +97,10 @@ const DatasetDetailPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [autoFix, setAutoFix] = useState(false);
   const [aggregation, setAggregation] = useState<AggType>('sum');
-const { t } = useLang();
-const { isAuthenticated } = useAuth();
-const { open: openAuthModal } = useAuthModal();
+  const [expanded, setExpanded] = useState<Expanded>(null);   // ← YENİ
+  const { t } = useLang();
+  const { isAuthenticated } = useAuth();
+  const { open: openAuthModal } = useAuthModal();
   const chartRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const stateDataset = (location.state as any)?.dataset as DatasetSummary | undefined;
@@ -128,7 +115,6 @@ const { open: openAuthModal } = useAuthModal();
       .finally(() => setLoading(false));
   }, [dataset]);
 
-  // autoFix aktivdirsə data-dakı "?" işarələri bərpa olunur
   const fixedData = useMemo(() => {
     if (!autoFix || !data) return data;
     return {
@@ -136,10 +122,7 @@ const { open: openAuthModal } = useAuthModal();
       data: Array.isArray(data.data)
         ? data.data.map((row: any) =>
             Object.fromEntries(
-              Object.entries(row).map(([k, v]) => [
-                k,
-                typeof v === 'string' ? fixText(v) : v
-              ])
+              Object.entries(row).map(([k, v]) => [k, typeof v === 'string' ? fixText(v) : v])
             )
           )
         : data.data
@@ -154,12 +137,10 @@ const { open: openAuthModal } = useAuthModal();
 
     const numericKey = cols.numeric[0];
     const categoryKey =
-      cols.categorical.find(k => !/unit|measure|vahid|title/i.test(k)) ||
-      cols.categorical[0];
+      cols.categorical.find(k => !/unit|measure|vahid|title/i.test(k)) || cols.categorical[0];
     const timeKey = cols.dates[0];
     const stats = computeStats(rows, numericKey);
 
-    // Line chart (fallback — tək xətt)
     let lineData: any[] = [];
     if (timeKey && numericKey) {
       const m = new Map<string, number>();
@@ -174,7 +155,6 @@ const { open: openAuthModal } = useAuthModal();
         .slice(0, 50);
     }
 
-    // Bar chart
     let barData: any[] = [];
     if (categoryKey && numericKey && categoryKey !== timeKey) {
       const m = new Map<string, number>();
@@ -189,13 +169,11 @@ const { open: openAuthModal } = useAuthModal();
         .slice(0, 10);
     }
 
-    // Multi-series hazırla
     const multiSeries =
       timeKey && categoryKey && numericKey && categoryKey !== timeKey
         ? buildMultiSeries(rows, timeKey, categoryKey, numericKey)
         : null;
 
-    // Lat/lon aşkarlama
     const geoPoints = detectGeoPoints(rows);
 
     return {
@@ -203,16 +181,35 @@ const { open: openAuthModal } = useAuthModal();
       lineData, barData, pieData: barData.slice(0, 6),
       totalRows: rows.length,
       multiSeries,
-      geoPoints    // ← YENİ
+      geoPoints
     };
   }, [fixedData]);
+
+  // Modal başlığı
+  const modalTitle = (() => {
+    if (!expanded) return '';
+    if (expanded.kind === 'stat') {
+      const map: Record<AggType, string> = {
+        sum:   t('detail.sum'),
+        avg:   t('detail.avg'),
+        max:   t('detail.max'),
+        min:   t('detail.min'),
+        count: t('detail.count'),
+      };
+      return `${map[expanded.agg]} — ${niceName(analysis?.numericKey || '')}`;
+    }
+    if (expanded.kind === 'multiseries') return t('detail.periodDynamics1');
+    if (expanded.kind === 'pie')         return t('detail.distribution');
+    if (expanded.kind === 'bar')         return t('detail.top10');
+    if (expanded.kind === 'table')       return t('detail.rawData');
+    return '';
+  })();
 
   if (!dataset) {
     return (
       <div className="p-6 text-gray-400">
         {t('detail.notFound')} <Link to="/" className="text-accent-cyan">{t('detail.back')}</Link>
         <h3>{t('detail.rawData')}</h3>
-
       </div>
     );
   }
@@ -233,7 +230,6 @@ const { open: openAuthModal } = useAuthModal();
               {data && <span>• {data.meta.totalRecords} {t('detail.rows')}</span>}
             </div>
           </div>
-          {/* Export buttons */}
           <ExportButtons
             title={dataset.title}
             data={Array.isArray(fixedData?.data) ? fixedData.data : undefined}
@@ -248,7 +244,7 @@ const { open: openAuthModal } = useAuthModal();
             <div className="flex-1">
               <div className="font-medium">{t('detail.encodingWarning1')}</div>
               <div className="text-xs mt-1 text-yellow-300/80">
-                 {t('detail.encodingWarning2')} {data.meta.corruptionCount} 
+                {t('detail.encodingWarning2')} {data.meta.corruptionCount}
               </div>
               <button
                 onClick={() => setAutoFix(v => !v)}
@@ -280,77 +276,103 @@ const { open: openAuthModal } = useAuthModal();
         {!loading && !error && analysis && (
           <>
             {/* Stat cards & Aggregation controls */}
-          {analysis.stats && (
-  <div className="rounded-xl bg-bg-card border border-border p-4 mb-5">
-    <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-      <div className="flex items-center gap-2">
-        <Activity size={14} className="text-accent-cyan" />
-        <span className="text-sm font-semibold">
-          {niceName(analysis.numericKey)} — {t('detail.stats')}
-        </span>
-      </div>
+            {analysis.stats && (
+              <div className="rounded-xl bg-bg-card border border-border p-4 mb-5">
+                <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+                  <div className="flex items-center gap-2">
+                    <Activity size={14} className="text-accent-cyan" />
+                    <span className="text-sm font-semibold">
+                      {niceName(analysis.numericKey)} — {t('detail.stats')}
+                    </span>
+                  </div>
 
-      <div className="flex items-center gap-1 bg-bg-primary border border-border rounded-lg p-1">
-        {(['sum', 'avg', 'max', 'min', 'count'] as AggType[]).map(agg => (
-          <button
-            key={agg}
-            onClick={() => setAggregation(agg)}
-            className={`px-3 py-1 rounded-md text-[11px] font-medium transition ${
-              aggregation === agg
-                ? 'bg-accent-cyan/15 text-accent-cyan'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            {agg === 'sum'   ? t('detail.sum')   :
-             agg === 'avg'   ? t('detail.avg')   :
-             agg === 'max'   ? t('detail.max')   :
-             agg === 'min'   ? t('detail.min')   :
-                               t('detail.count')}
-          </button>
-        ))}
-      </div>
-    </div>
+                  <div className="flex items-center gap-1 bg-bg-primary border border-border rounded-lg p-1">
+                    {(['sum', 'avg', 'max', 'min', 'count'] as AggType[]).map(agg => (
+                      <button
+                        key={agg}
+                        onClick={() => setAggregation(agg)}
+                        className={`px-3 py-1 rounded-md text-[11px] font-medium transition ${
+                          aggregation === agg
+                            ? 'bg-accent-cyan/15 text-accent-cyan'
+                            : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        {agg === 'sum'   ? t('detail.sum')   :
+                         agg === 'avg'   ? t('detail.avg')   :
+                         agg === 'max'   ? t('detail.max')   :
+                         agg === 'min'   ? t('detail.min')   :
+                                           t('detail.count')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      <StatCard
-        icon={Hash}
-        label={t('detail.sum')}
-        hint={`${t('detail.hintSum')} — "${niceName(analysis.numericKey)}"`}
-        value={fmtNum(analysis.stats.sum)}
-        color="purple"
-        highlight={aggregation === 'sum'}
-      />
-      <StatCard
-        icon={Activity}
-        label={t('detail.avg')}
-        hint={`${t('detail.hintAvg')} — "${niceName(analysis.numericKey)}"`}
-        value={fmtNum(analysis.stats.avg)}
-        color="cyan"
-        highlight={aggregation === 'avg'}
-      />
-      <StatCard
-        icon={TrendingUp}
-        label={t('detail.max')}
-        hint={`${t('detail.hintMax')} — "${niceName(analysis.numericKey)}"`}
-        value={fmtNum(analysis.stats.max)}
-        color="pink"
-        highlight={aggregation === 'max'}
-      />
-      <StatCard
-        icon={TrendingDown}
-        label={t('detail.min')}
-        hint={`${t('detail.hintMin')} — "${niceName(analysis.numericKey)}"`}
-        value={fmtNum(analysis.stats.min)}
-        color="blue"
-        highlight={aggregation === 'min'}
-      />
-    </div>
-  </div>
-)}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <StatCard
+                    icon={Hash}
+                    label={t('detail.sum')}
+                    hint={`${t('detail.hintSum')} — "${niceName(analysis.numericKey)}"`}
+                    value={fmtNum(analysis.stats.sum)}
+                    color="purple"
+                    highlight={aggregation === 'sum'}
+                    onClick={() => {
+                      setAggregation('sum');
+                      setExpanded({ kind: 'stat', agg: 'sum' });
+                    }}
+                  />
+                  <StatCard
+                    icon={Activity}
+                    label={t('detail.avg')}
+                    hint={`${t('detail.hintAvg')} — "${niceName(analysis.numericKey)}"`}
+                    value={fmtNum(analysis.stats.avg)}
+                    color="cyan"
+                    highlight={aggregation === 'avg'}
+                    onClick={() => {
+                      setAggregation('avg');
+                      setExpanded({ kind: 'stat', agg: 'avg' });
+                    }}
+                  />
+                  <StatCard
+                    icon={TrendingUp}
+                    label={t('detail.max')}
+                    hint={`${t('detail.hintMax')} — "${niceName(analysis.numericKey)}"`}
+                    value={fmtNum(analysis.stats.max)}
+                    color="pink"
+                    highlight={aggregation === 'max'}
+                    onClick={() => {
+                      setAggregation('max');
+                      setExpanded({ kind: 'stat', agg: 'max' });
+                    }}
+                  />
+                  <StatCard
+                    icon={TrendingDown}
+                    label={t('detail.min')}
+                    hint={`${t('detail.hintMin')} — "${niceName(analysis.numericKey)}"`}
+                    value={fmtNum(analysis.stats.min)}
+                    color="blue"
+                    highlight={aggregation === 'min'}
+                    onClick={() => {
+                      setAggregation('min');
+                      setExpanded({ kind: 'stat', agg: 'min' });
+                    }}
+                  />
+                </div>
+              </div>
+            )}
 
-            {/* Multi-series line chart (prioritet) */}
+            {/* Multi-series line chart */}
             {analysis.multiSeries && analysis.multiSeries.series.length > 1 && (
-              <div ref={chartRef} className="rounded-xl bg-bg-card border border-border p-4 mb-5">
+              <div
+                ref={chartRef}
+                onClick={() => setExpanded({ kind: 'multiseries' })}
+                className="rounded-xl bg-bg-card border border-border p-4 mb-5 cursor-pointer
+                           hover:border-accent-cyan/40 transition-colors group/chart relative"
+              >
+                <div className="absolute top-3 right-3 opacity-0 group-hover/chart:opacity-100 transition-opacity
+                                w-7 h-7 rounded-md bg-bg-primary/80 border border-border
+                                flex items-center justify-center text-gray-400">
+                  <Maximize2 size={12} />
+                </div>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <TrendingUp size={14} className="text-accent-cyan" />
@@ -359,7 +381,7 @@ const { open: openAuthModal } = useAuthModal();
                       {analysis.categoryKey && ` — ${niceName(analysis.categoryKey)} üzrə`}
                     </h3>
                   </div>
-                  <span className="text-[10px] text-gray-500">
+                  <span className="text-[10px] text-gray-500 mr-8">
                     {analysis.multiSeries.series.length} seriya
                   </span>
                 </div>
@@ -367,9 +389,19 @@ const { open: openAuthModal } = useAuthModal();
               </div>
             )}
 
-            {/* Fallback — tək xətt (multi-series mümkün deyilsə) */}
+            {/* Fallback — tək xətt */}
             {!analysis.multiSeries && analysis.lineData.length > 1 && (
-              <div ref={chartRef} className="rounded-xl bg-bg-card border border-border p-4 mb-5">
+              <div
+                ref={chartRef}
+                onClick={() => setExpanded({ kind: 'multiseries' })}
+                className="rounded-xl bg-bg-card border border-border p-4 mb-5 cursor-pointer
+                           hover:border-accent-cyan/40 transition-colors group/chart relative"
+              >
+                <div className="absolute top-3 right-3 opacity-0 group-hover/chart:opacity-100 transition-opacity
+                                w-7 h-7 rounded-md bg-bg-primary/80 border border-border
+                                flex items-center justify-center text-gray-400">
+                  <Maximize2 size={12} />
+                </div>
                 <div className="flex items-center gap-2 mb-3">
                   <TrendingUp size={14} className="text-accent-cyan" />
                   <h3 className="text-sm font-semibold">
@@ -393,7 +425,16 @@ const { open: openAuthModal } = useAuthModal();
             {/* Pie + Bar */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
               {analysis.pieData.length > 1 && (
-                <div className="rounded-xl bg-bg-card border border-border p-4">
+                <div
+                  onClick={() => setExpanded({ kind: 'pie' })}
+                  className="rounded-xl bg-bg-card border border-border p-4 cursor-pointer
+                             hover:border-accent-purple/40 transition-colors group/pie relative"
+                >
+                  <div className="absolute top-3 right-3 opacity-0 group-hover/pie:opacity-100 transition-opacity
+                                  w-7 h-7 rounded-md bg-bg-primary/80 border border-border
+                                  flex items-center justify-center text-gray-400">
+                    <Maximize2 size={12} />
+                  </div>
                   <div className="flex items-center gap-2 mb-3">
                     <PieIcon size={14} className="text-accent-purple" />
                     <h3 className="text-sm font-semibold">{t('detail.distribution')} — {niceName(analysis.categoryKey)}</h3>
@@ -401,7 +442,8 @@ const { open: openAuthModal } = useAuthModal();
                   <div className="h-72">
                     <ResponsiveContainer>
                       <PieChart>
-                        <Pie data={analysis.pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={90} label={{ fontSize: 10, fill: '#9ca3af' }}>
+                        <Pie data={analysis.pieData} dataKey="value" nameKey="name" cx="50%" cy="50%"
+                             innerRadius={50} outerRadius={90} label={{ fontSize: 10, fill: '#9ca3af' }}>
                           {analysis.pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                         </Pie>
                         <Tooltip contentStyle={{ background: '#1a1f35', border: '1px solid #2a3050', borderRadius: 8, fontSize: 12 }} />
@@ -412,7 +454,17 @@ const { open: openAuthModal } = useAuthModal();
                 </div>
               )}
               {analysis.barData.length > 1 && (
-                <div className={`rounded-xl bg-bg-card border border-border p-4 ${analysis.pieData.length > 1 ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
+                <div
+                  onClick={() => setExpanded({ kind: 'bar' })}
+                  className={`rounded-xl bg-bg-card border border-border p-4 cursor-pointer
+                             hover:border-accent-pink/40 transition-colors group/bar relative
+                             ${analysis.pieData.length > 1 ? 'lg:col-span-2' : 'lg:col-span-3'}`}
+                >
+                  <div className="absolute top-3 right-3 opacity-0 group-hover/bar:opacity-100 transition-opacity
+                                  w-7 h-7 rounded-md bg-bg-primary/80 border border-border
+                                  flex items-center justify-center text-gray-400">
+                    <Maximize2 size={12} />
+                  </div>
                   <div className="flex items-center gap-2 mb-3">
                     <BarChart3 size={14} className="text-accent-pink" />
                     <h3 className="text-sm font-semibold">{t('detail.top10')} — {niceName(analysis.categoryKey)}</h3>
@@ -462,10 +514,21 @@ const { open: openAuthModal } = useAuthModal();
             )}
 
             {/* Table */}
-            <div className="rounded-xl bg-bg-card border border-border overflow-hidden">
-              <div className="p-4 border-b border-border flex items-center gap-2">
-                <FileText size={14} className="text-gray-500" />
-                <h3 className="text-sm font-semibold">{t('detail.rawData')}</h3>
+            <div
+              onClick={() => setExpanded({ kind: 'table' })}
+              className="rounded-xl bg-bg-card border border-border overflow-hidden
+                         cursor-pointer hover:border-accent-cyan/40 transition-colors group/table relative"
+            >
+              <div className="p-4 border-b border-border flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText size={14} className="text-gray-500" />
+                  <h3 className="text-sm font-semibold">{t('detail.rawData')}</h3>
+                </div>
+                <div className="opacity-0 group-hover/table:opacity-100 transition-opacity
+                                w-6 h-6 rounded-md bg-bg-primary/80 border border-border
+                                flex items-center justify-center text-gray-400">
+                  <Maximize2 size={11} />
+                </div>
               </div>
               <div className="p-4">
                 <TableRenderer data={fixedData?.data ?? []} />
@@ -484,43 +547,138 @@ const { open: openAuthModal } = useAuthModal();
       {/* Sağ info panel */}
       <aside className="w-72 bg-bg-secondary border-l border-border p-4 overflow-y-auto hidden lg:block">
         <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
-          <Info size={14} className="text-gray-400" />  {t('info.title')}
+          <Info size={14} className="text-gray-400" /> {t('info.title')}
         </h3>
-       <InfoRow label={t('info.name')} value={dataset.title} />
-<InfoRow label={t('info.organization')} value={dataset.organization} />
-<InfoRow label={t('info.format')} value={dataset.format} />
-{data && <InfoRow label={t('info.recordCount')} value={String(data.meta.totalRecords)} />}
-{analysis?.timeKey && <InfoRow label={t('info.timeColumn')} value={analysis.timeKey} />}
-{analysis?.numericKey && <InfoRow label={t('info.numericColumn')} value={analysis.numericKey} />}
-{analysis?.categoryKey && <InfoRow label={t('info.categoryColumn')} value={analysis.categoryKey} />}
+        <InfoRow label={t('info.name')} value={dataset.title} />
+        <InfoRow label={t('info.organization')} value={dataset.organization} />
+        <InfoRow label={t('info.format')} value={dataset.format} />
+        {data && <InfoRow label={t('info.recordCount')} value={String(data.meta.totalRecords)} />}
+        {analysis?.timeKey && <InfoRow label={t('info.timeColumn')} value={analysis.timeKey} />}
+        {analysis?.numericKey && <InfoRow label={t('info.numericColumn')} value={analysis.numericKey} />}
+        {analysis?.categoryKey && <InfoRow label={t('info.categoryColumn')} value={analysis.categoryKey} />}
         <div className="mt-6 space-y-2">
-  {dataset.resourceUrl && (
-  <a
-    href={isAuthenticated ? dataset.resourceUrl : undefined}
-    onClick={(e) => {
-      if (!isAuthenticated) {
-        e.preventDefault();
-        openAuthModal('signin');
-      }
-    }}
-    target={isAuthenticated ? '_blank' : undefined}
-    rel={isAuthenticated ? 'noreferrer' : undefined}
-    className={`flex items-center justify-center gap-2 w-full py-2 rounded-lg border text-xs font-medium transition ${
-      isAuthenticated
-        ? 'bg-accent-cyan/10 border-accent-cyan/30 text-accent-cyan hover:bg-accent-cyan/20 cursor-pointer'
-        : 'bg-bg-card border-border text-gray-500 hover:border-accent-cyan/50 cursor-pointer'
-    }`}
-  >
-    <Download size={12} />
-    {t('info.download')}
-  </a>
-)}
+          {dataset.resourceUrl && (
+            <a
+              href={isAuthenticated ? dataset.resourceUrl : undefined}
+              onClick={(e) => {
+                if (!isAuthenticated) { e.preventDefault(); openAuthModal('signin'); }
+              }}
+              target={isAuthenticated ? '_blank' : undefined}
+              rel={isAuthenticated ? 'noreferrer' : undefined}
+              className={`flex items-center justify-center gap-2 w-full py-2 rounded-lg border text-xs font-medium transition ${
+                isAuthenticated
+                  ? 'bg-accent-cyan/10 border-accent-cyan/30 text-accent-cyan hover:bg-accent-cyan/20 cursor-pointer'
+                  : 'bg-bg-card border-border text-gray-500 hover:border-accent-cyan/50 cursor-pointer'
+              }`}
+            >
+              <Download size={12} />
+              {t('info.download')}
+            </a>
+          )}
           <a href={dataset.metadataUrl} target="_blank" rel="noreferrer"
             className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-bg-card border border-border text-gray-400 hover:text-accent-cyan text-xs font-medium">
             <ExternalLink size={12} /> {t('info.apiMetadata')}
           </a>
         </div>
       </aside>
+
+      {/* ═══════════════════ MODAL ═══════════════════ */}
+      <ExpandableModal
+        open={expanded !== null}
+        onClose={() => setExpanded(null)}
+        title={modalTitle}
+        subtitle={dataset.title}
+      >
+        {/* Stat card modal */}
+        {expanded?.kind === 'stat' && analysis?.stats && (
+          <div className="h-full flex flex-col gap-4">
+            <div className="text-center py-6 border-b border-border">
+              <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+                {modalTitle}
+              </div>
+              <div className="text-5xl font-bold text-accent-cyan">
+                {fmtNum(
+                  expanded.agg === 'sum'   ? analysis.stats.sum :
+                  expanded.agg === 'avg'   ? analysis.stats.avg :
+                  expanded.agg === 'max'   ? analysis.stats.max :
+                  expanded.agg === 'min'   ? analysis.stats.min :
+                                             analysis.stats.count
+                )}
+              </div>
+              <div className="text-xs text-gray-500 mt-3">
+                {analysis.stats.count} qeyd üzrə hesablanıb
+              </div>
+            </div>
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <div className="text-sm font-semibold mb-2">Xam data</div>
+              <TableRenderer data={Array.isArray(fixedData?.data) ? fixedData.data : []} />
+            </div>
+          </div>
+        )}
+
+        {/* Multi-series modal */}
+        {expanded?.kind === 'multiseries' && analysis?.multiSeries && (
+          <div className="h-full">
+            <MultiSeriesLineChart result={analysis.multiSeries} />
+          </div>
+        )}
+
+        {/* Fallback single-line modal */}
+        {expanded?.kind === 'multiseries' && !analysis?.multiSeries && analysis && (
+          <div className="h-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={analysis.lineData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2a3050" />
+                <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
+                <YAxis stroke="#6b7280" fontSize={12} tickFormatter={fmtNum} />
+                <Tooltip contentStyle={{ background: '#1a1f35', border: '1px solid #2a3050', borderRadius: 8, fontSize: 12 }} />
+                <Line type="monotone" dataKey="value" stroke="#22d3ee" strokeWidth={2} dot={{ r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Pie modal */}
+        {expanded?.kind === 'pie' && analysis && (
+          <div className="h-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={analysis.pieData} dataKey="value" nameKey="name"
+                     cx="50%" cy="50%" innerRadius={80} outerRadius={150}
+                     label={{ fontSize: 12, fill: '#9ca3af' }}>
+                  {analysis.pieData.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ background: '#1a1f35', border: '1px solid #2a3050', borderRadius: 8 }} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Bar modal */}
+        {expanded?.kind === 'bar' && analysis && (
+          <div className="h-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={analysis.barData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#2a3050" />
+                <XAxis type="number" stroke="#6b7280" tickFormatter={fmtNum} />
+                <YAxis type="category" dataKey="name" stroke="#6b7280" width={200} />
+                <Tooltip contentStyle={{ background: '#1a1f35', border: '1px solid #2a3050', borderRadius: 8 }} />
+                <Bar dataKey="value" fill="#a855f7" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Table modal */}
+        {expanded?.kind === 'table' && (
+          <div className="h-full">
+            <TableRenderer data={Array.isArray(fixedData?.data) ? fixedData.data : []} />
+          </div>
+        )}
+      </ExpandableModal>
     </div>
   );
 };
@@ -533,6 +691,7 @@ interface StatCardProps {
   value: string;
   color: 'cyan' | 'purple' | 'pink' | 'blue';
   highlight?: boolean;
+  onClick?: () => void;
 }
 
 const colorMap = {
@@ -542,13 +701,14 @@ const colorMap = {
   blue:   'from-accent-blue/20 to-accent-blue/5 text-accent-blue border-accent-blue/30'
 };
 
-const StatCard = ({ icon: Icon, label, hint, value, color, highlight }: StatCardProps) => {
+const StatCard = ({ icon: Icon, label, hint, value, color, highlight, onClick }: StatCardProps) => {
   const c = colorMap[color].split(' ');
   return (
     <div
-      className={`rounded-xl bg-gradient-to-br ${c[0]} ${c[1]} border ${c[2]} p-4 group relative cursor-help transition-all ${
-        highlight ? 'ring-2 ring-accent-cyan/40 scale-[1.02]' : ''
-      }`}
+      onClick={onClick}
+      className={`relative rounded-xl bg-gradient-to-br ${c[0]} ${c[1]} border ${c[2]}
+                  p-4 group cursor-pointer transition-all hover:-translate-y-0.5
+                  ${highlight ? 'ring-2 ring-accent-cyan/40 scale-[1.02]' : ''}`}
       title={hint}
     >
       <div className={`w-8 h-8 rounded-lg bg-bg-primary/50 flex items-center justify-center ${c[3]} mb-2`}>

@@ -17,7 +17,7 @@ const toneMap = {
   blue:   { bar: 'bg-accent-blue',   text: 'text-accent-blue',   soft: 'bg-accent-blue/10'   },
 };
 
-const StatCard = ({ config, dataset, loading,onExpand }: Props) => {
+const StatCard = ({ config, dataset, loading, onExpand }: Props) => {
   const t = toneMap[config.color];
 
   let value = '—';
