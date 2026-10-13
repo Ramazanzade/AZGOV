@@ -1,9 +1,18 @@
+// routes/dashboardRoutes.ts
 import { Router } from 'express';
-import { getDynamicData, getAllDatasets, getStats } from '../controllers/dashboardController';
+import { OpendataController } from '../controllers/opendataController';
 
 const router = Router();
-router.get('/fetch-data', getDynamicData);
-router.get('/datasets', getAllDatasets);
-router.get('/stats', getStats);
+
+// ⚠️ SIRA VACİBDİR: xüsusi route-lar əvvəl, dinamik route-lar sonra
+
+// 1. Statistikalar
+router.get('/stats', OpendataController.getStats);
+
+// 2. Dataset siyahısı
+router.get('/datasets', OpendataController.getDatasets);
+
+// 3. Tək dataset-in məzmunu (PDF, Excel, CSV, ZIP, JSON)
+router.get('/:id/content', OpendataController.getContent);
 
 export default router;

@@ -4,6 +4,7 @@ import { DatasetSummary, FetchedDataset } from '../../types/dataset';
 import { fetchDatasetByUrl } from '../../services/api';
 import DynamicRenderer from './DynamicRenderer';
 import { useLang } from '../../i18n/LanguageContext';
+import { fetchDatasetContent } from '../../services/api';
 
 interface Props {
   dataset: DatasetSummary | null;
@@ -16,14 +17,17 @@ const DatasetDrawer = ({ dataset, onClose }: Props) => {
   const [error, setError] = useState<string | null>(null);
   const { t } = useLang();
 
-  useEffect(() => {
+ useEffect(() => {
     if (!dataset) { setData(null); setError(null); return; }
-    setLoading(true); setError(null);
-    fetchDatasetByUrl(dataset.metadataUrl)
-      .then(setData)
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [dataset]);
+    setLoading(true); 
+    setError(null);
+    
+    // ✅ metadataUrl yerinə dataset.id istifadə edirik
+    fetchDatasetContent(dataset.id)
+        .then(setData)
+        .catch(e => setError(e.message))
+        .finally(() => setLoading(false));
+}, [dataset]);
 
   return (
     <>
@@ -50,7 +54,7 @@ const DatasetDrawer = ({ dataset, onClose }: Props) => {
                   {dataset.title}
                 </h2>
                 <div className="flex items-center gap-3 mt-2 text-[11px] text-gray-500">
-                  <span>{dataset.organization}</span>
+                  <span>{dataset.organization || '—'}</span>
                   <span className="px-1.5 py-0.5 rounded bg-bg-primary border border-border">
                     {dataset.format}
                   </span>
@@ -62,9 +66,9 @@ const DatasetDrawer = ({ dataset, onClose }: Props) => {
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                {dataset.resourceUrl && (
+                {(dataset.resourceUrl || (dataset as any).storageUrl) && (
                   <a
-                    href={dataset.resourceUrl}
+        href={dataset.resourceUrl || (dataset as any).storageUrl} 
                     target="_blank"
                     rel="noreferrer"
                     className="p-2 rounded-lg bg-bg-primary border border-border text-gray-400 hover:text-accent-cyan hover:border-accent-cyan/30"
@@ -75,7 +79,7 @@ const DatasetDrawer = ({ dataset, onClose }: Props) => {
                   </a>
                 )}
                 <a
-                  href={dataset.metadataUrl}
+        href={dataset.resourceUrl || (dataset as any).storageUrl} 
                   target="_blank"
                   rel="noreferrer"
                   className="p-2 rounded-lg bg-bg-primary border border-border text-gray-400 hover:text-accent-cyan hover:border-accent-cyan/30"

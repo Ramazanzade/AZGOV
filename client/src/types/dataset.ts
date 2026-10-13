@@ -1,25 +1,31 @@
+// types/dataset.ts
 export interface DatasetSummary {
-  id: string;
-  name: string;
-  title: string;
-  organization: string;
-  format: string;
-  resourceUrl: string | null;
-  metadataUrl: string;
-  notes: string;
-  tags: string[];
-  lastUpdated: string;
-   group: string;  
+    id: number;
+    resourceId: string;
+    title: string;
+    slug: string | null;
+    organization: string | null;
+    metadataUrl: string | null;
+    resourceName: string | null;
+    format: string;
+    resourceUrl: string | null;
+    storageUrl: string | null;    // ← Əlavə et
+    key: string;
+    group: string;
+    categoryName: string | null;
+    categoryPath: string | null;
+    
+    // Frontend üçün köhnə sahələr (nullable):
+    tags?: string[];
+    lastUpdated?: string;
 }
 
 export interface FetchedDataset {
-  meta: {
-    title: string;
-    format: string;
-    isGeoJSON: boolean;
-    totalRecords: number;
-        corrupted?: boolean;        // ← əlavə edin
-    corruptionCount?: number;
-  };
-  data: any;
+    meta: {
+        format: string;
+        isGeoJSON: boolean;
+        totalRecords: number;
+        url?: string;
+    };
+    data: any;
 }

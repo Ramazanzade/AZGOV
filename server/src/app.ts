@@ -1,10 +1,12 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import dashboardRoutes from './routes/dashboardRoutes';
+import opendataRoutes from './routes/opendataRoutes';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import path from 'path';
+import dashboardRoutes from './routes/dashboardRoutes';
+
 const app: Application = express();
 
 // Middleware
@@ -25,9 +27,11 @@ app.get('/health', (req: Request, res: Response) => {
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.use('/api/auth', authRoutes);         // ← YENİ
-app.use('/api/v1/dashboard', dashboardRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/v1/opendataRoutes', opendataRoutes);
+app.use('/api/opendataRoutes', opendataRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes);
+
 
 // 404
 app.use((req: Request, res: Response) => {

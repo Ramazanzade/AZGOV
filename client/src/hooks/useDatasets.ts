@@ -12,8 +12,19 @@ export const useDatasets = (filters?: Partial<DatasetFilters>) => {
     let active = true;
     setLoading(true);
     getDatasets()
-      .then(data => { if (active) { setDatasets(data); setError(null); } })
-      .catch(e => { if (active) setError(e.message); })
+      .then(data => {
+        if (!active) return;
+        // Müdafiəçi kod: həmişə array olsun
+        const safeData = Array.isArray(data) ? data : [];
+        setDatasets(safeData);
+        setError(null);
+      })
+      .catch(e => {
+        if (active) {
+          setError(e.message);
+          setDatasets([]); // Xəta olsa da, boş array saxla
+        }
+      })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
@@ -22,13 +33,20 @@ export const useDatasets = (filters?: Partial<DatasetFilters>) => {
     const f = filters || {};
     const q = (f.search || '').toLowerCase().trim();
 
-    return datasets.filter(d => {
+    // Müdafiəçi: datasets array deyilsə boş array kimi qəbul et
+    const list = Array.isArray(datasets) ? datasets : [];
+
+    return list.filter(d => {
       // Axtarış
       if (q) {
+        const title = (d.title || '').toLowerCase();
+        const org = (d.organization || '').toLowerCase();
+        const resourceName = ((d as any).resourceName || '').toLowerCase();
+        
         const match =
-          d.title.toLowerCase().includes(q) ||
-          d.organization.toLowerCase().includes(q) ||
-          (d.tags || []).some(t => t.toLowerCase().includes(q));
+          title.includes(q) ||
+          org.includes(q) ||
+          resourceName.includes(q);
         if (!match) return false;
       }
 
@@ -42,11 +60,11 @@ export const useDatasets = (filters?: Partial<DatasetFilters>) => {
       if (f.group && f.group !== 'ALL' && d.group !== f.group) return false;
 
       // Tarix aralığı
-      if (f.dateFrom && d.lastUpdated) {
-        if (new Date(d.lastUpdated) < new Date(f.dateFrom)) return false;
+      if (f.dateFrom && (d as any).lastUpdated) {
+        if (new Date((d as any).lastUpdated) < new Date(f.dateFrom)) return false;
       }
-      if (f.dateTo && d.lastUpdated) {
-        if (new Date(d.lastUpdated) > new Date(f.dateTo)) return false;
+      if (f.dateTo && (d as any).lastUpdated) {
+        if (new Date((d as any).lastUpdated) > new Date(f.dateTo)) return false;
       }
 
       return true;
@@ -58,11 +76,15 @@ export const useDatasets = (filters?: Partial<DatasetFilters>) => {
     const orgs = new Set<string>();
     const groups = new Set<string>();
     const formats = new Set<string>();
-    datasets.forEach(d => {
+    
+    const list = Array.isArray(datasets) ? datasets : [];
+    
+    list.forEach(d => {
       if (d.organization) orgs.add(d.organization);
       if (d.group) groups.add(d.group);
       if (d.format) formats.add(d.format);
     });
+    
     return {
       organizations: Array.from(orgs).sort(),
       groups: Array.from(groups).sort(),
