@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams, Link, useLocation } from 'react-router-dom';
+import { useParams, Link, useLocation,useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Download, ExternalLink, Loader2, AlertCircle,
   Maximize2, TrendingUp, TrendingDown, PieChart as PieIcon, BarChart3,
@@ -24,7 +24,7 @@ import MarkerMap from '../components/renderers/MarkerMap';
 import { useLang } from '../i18n/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useAuthModal } from '../context/AuthModalContext';
-import { fetchDatasetContent } from '../services/api'; // və ya hansı service istifadə edirsinizsə
+import { fetchDatasetContent, fetchDatasetContentCached } from '../services/api';
 
 const COLORS = ['#22d3ee', '#a855f7', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e'];
 
@@ -104,13 +104,14 @@ const DatasetDetailPage = () => {
   const location = useLocation();
   const stateDataset = (location.state as any)?.dataset as DatasetSummary | undefined;
 const dataset = stateDataset || datasets.find(d => String(d.id) === String(id));
+  const navigate = useNavigate();   // ← ƏLAVƏ ET
 
 useEffect(() => {
     if (!id) return;
     setLoading(true); 
     setError(null);
     
-    fetchDatasetContent(Number(id))          
+    fetchDatasetContentCached(Number(id))          
       .then(setData)
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
@@ -224,9 +225,19 @@ useEffect(() => {
         {/* Header */}
         <div className="flex items-start justify-between mb-6 gap-4">
           <div>
-            <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-accent-cyan mb-3">
-              <ArrowLeft size={12} /> {t('detail.back')}
-            </Link>
+            <button
+  onClick={() => {
+    // Əgər əvvəlki səhifə varsa, geriyə qayıt, yoxsa ana səhifəyə
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  }}
+  className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-accent-cyan mb-3"
+>
+  <ArrowLeft size={12} /> {t('detail.back')}
+</button>
             <h1 className="text-xl font-bold text-gray-100 mb-2">{dataset.title}</h1>
             <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-500">
               <span>{dataset.organization || '—'}</span>

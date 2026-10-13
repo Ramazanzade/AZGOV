@@ -1,39 +1,29 @@
-import { useEffect, useState, useMemo } from 'react';
-import { getDatasets } from '../services/api';
+// hooks/useDatasets.ts
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { DatasetSummary } from '../types/dataset';
 import { DatasetFilters } from '../types/filters';
+import { getDatasets } from '../services/api';
 
 export const useDatasets = (filters?: Partial<DatasetFilters>) => {
-  const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // ✅ React Query — avtomatik cache, refetch, loading idarəetməsi
+  const {
+    data: datasets = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['datasets'],
+    queryFn: () => getDatasets(5000),
+    staleTime: 30 * 60 * 1000,        // 30 dəqiqə stale olmasın
+    gcTime: 60 * 60 * 1000,            // 1 saat cache-də saxla
+    refetchOnWindowFocus: false,       // Pəncərə fokuslananda yenidən çəkmə
+    retry: 1,
+  });
 
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    getDatasets()
-      .then(data => {
-        if (!active) return;
-        // Müdafiəçi kod: həmişə array olsun
-        const safeData = Array.isArray(data) ? data : [];
-        setDatasets(safeData);
-        setError(null);
-      })
-      .catch(e => {
-        if (active) {
-          setError(e.message);
-          setDatasets([]); // Xəta olsa da, boş array saxla
-        }
-      })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, []);
-
+  // ✅ Filter məntiqi eyni qalır
   const filtered = useMemo(() => {
     const f = filters || {};
     const q = (f.search || '').toLowerCase().trim();
-
-    // Müdafiəçi: datasets array deyilsə boş array kimi qəbul et
     const list = Array.isArray(datasets) ? datasets : [];
 
     return list.filter(d => {
@@ -71,7 +61,7 @@ export const useDatasets = (filters?: Partial<DatasetFilters>) => {
     });
   }, [datasets, filters?.search, filters?.format, filters?.organization, filters?.group, filters?.dateFrom, filters?.dateTo]);
 
-  // Filter üçün unikal dəyərlər (options)
+  // ✅ Filter üçün unikal dəyərlər (options) — eyni qalır
   const options = useMemo(() => {
     const orgs = new Set<string>();
     const groups = new Set<string>();
@@ -92,5 +82,11 @@ export const useDatasets = (filters?: Partial<DatasetFilters>) => {
     };
   }, [datasets]);
 
-  return { datasets, filtered, loading, error, options };
+  return { 
+    datasets, 
+    filtered, 
+    loading: isLoading, 
+    error: error instanceof Error ? error.message : null, 
+    options 
+  };
 };
