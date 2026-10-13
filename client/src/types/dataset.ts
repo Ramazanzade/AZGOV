@@ -26,6 +26,9 @@ export interface FetchedDataset {
         isGeoJSON: boolean;
         totalRecords: number;
         url?: string;
+        fileName?: string; 
+         corrupted?: boolean;          // ← ƏLAVƏ ET
+        corruptionCount?: number;  
     };
     data: any;
 }

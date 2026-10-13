@@ -24,6 +24,7 @@ import MarkerMap from '../components/renderers/MarkerMap';
 import { useLang } from '../i18n/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useAuthModal } from '../context/AuthModalContext';
+import { fetchDatasetContent } from '../services/api'; // və ya hansı service istifadə edirsinizsə
 
 const COLORS = ['#22d3ee', '#a855f7', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e'];
 
@@ -88,7 +89,7 @@ const fmtNum = (n: number) => {
 };
 
 const DatasetDetailPage = () => {
-  const { id } = useParams<{ id: string }>();
+    const { id } = useParams<{ id: string }>();           // ← URL-dən id
   const { datasets } = useDatasets();
   const [data, setData] = useState<FetchedDataset | null>(null);
   const [loading, setLoading] = useState(true);
@@ -102,16 +103,18 @@ const DatasetDetailPage = () => {
   const chartRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const stateDataset = (location.state as any)?.dataset as DatasetSummary | undefined;
-  const dataset = stateDataset || datasets.find(d => d.id === id);
+const dataset = stateDataset || datasets.find(d => String(d.id) === String(id));
 
-  useEffect(() => {
-    if (!dataset) return;
-    setLoading(true); setError(null);
-    fetchDatasetByUrl(dataset.metadataUrl)
+useEffect(() => {
+    if (!id) return;
+    setLoading(true); 
+    setError(null);
+    
+    fetchDatasetContent(Number(id))          
       .then(setData)
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [dataset]);
+}, [id]);
 
   const fixedData = useMemo(() => {
     if (!autoFix || !data) return data;
@@ -226,7 +229,7 @@ const DatasetDetailPage = () => {
             </Link>
             <h1 className="text-xl font-bold text-gray-100 mb-2">{dataset.title}</h1>
             <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-500">
-              <span>{dataset.organization}</span>
+              <span>{dataset.organization || '—'}</span>
               <span className="px-2 py-0.5 rounded bg-bg-card border border-border">{dataset.format}</span>
               {data && <span>• {data.meta.totalRecords} {t('detail.rows')}</span>}
             </div>
@@ -245,7 +248,7 @@ const DatasetDetailPage = () => {
             <div className="flex-1">
               <div className="font-medium">{t('detail.encodingWarning1')}</div>
               <div className="text-xs mt-1 text-yellow-300/80">
-                {t('detail.encodingWarning2')} {data.meta.corruptionCount}
+                {t('detail.encodingWarning2')} {data.meta.corruptionCount ?? 0}
               </div>
               <button
                 onClick={() => setAutoFix(v => !v)}
@@ -273,7 +276,31 @@ const DatasetDetailPage = () => {
             </div>
           </div>
         )}
-
+{/* ✅ PDF — xüsusi render */}
+{!loading && !error && fixedData?.meta?.format === 'PDF' && fixedData?.meta?.url && (
+  <div className="rounded-xl bg-bg-card border border-border p-4">
+    <div className="flex items-center justify-between mb-3">
+      <span className="text-sm font-semibold flex items-center gap-2">
+        <FileText size={14} className="text-accent-cyan" />
+        PDF önizləmə
+      </span>
+      <a
+        href={fixedData.meta.url}
+        target="_blank"
+        rel="noreferrer"
+        className="text-xs text-accent-cyan hover:underline flex items-center gap-1"
+      >
+        <ExternalLink size={12} />
+        Yeni tabda aç
+      </a>
+    </div>
+    <iframe
+      src={fixedData.meta.url}
+      title={dataset.title}
+      className="w-full min-h-[75vh] rounded-lg border border-border bg-white"
+    />
+  </div>
+)}
         {!loading && !error && analysis && (
           <>
             {/* Stat cards & Aggregation controls */}
@@ -546,11 +573,11 @@ const DatasetDetailPage = () => {
           </>
         )}
 
-        {!loading && !error && fixedData && !analysis && (
-          <div className="rounded-xl bg-bg-card border border-border p-6">
-            <TableRenderer data={Array.isArray(fixedData.data) ? fixedData.data : [fixedData.data]} />
-          </div>
-        )}
+       {!loading && !error && fixedData && !analysis && fixedData?.meta?.format !== 'PDF' && (
+  <div className="rounded-xl bg-bg-card border border-border p-6">
+    <TableRenderer data={Array.isArray(fixedData.data) ? fixedData.data : []} />
+  </div>
+)}
       </div>
 
       {/* Sağ info panel */}
@@ -558,18 +585,18 @@ const DatasetDetailPage = () => {
         <h3 className="font-semibold text-sm mb-4 flex items-center gap-2">
           <Info size={14} className="text-gray-400" /> {t('info.title')}
         </h3>
-        <InfoRow label={t('info.name')} value={dataset.title} />
-        <InfoRow label={t('info.organization')} value={dataset.organization} />
-        <InfoRow label={t('info.format')} value={dataset.format} />
+   <InfoRow label={t('info.name')} value={dataset.title || '—'} />
+<InfoRow label={t('info.organization')} value={dataset.organization || '—'} />
+<InfoRow label={t('info.format')} value={dataset.format || '—'} />
         {data && <InfoRow label={t('info.recordCount')} value={String(data.meta.totalRecords)} />}
         {analysis?.timeKey && <InfoRow label={t('info.timeColumn')} value={analysis.timeKey} />}
         {analysis?.numericKey && <InfoRow label={t('info.numericColumn')} value={analysis.numericKey} />}
         {analysis?.categoryKey && <InfoRow label={t('info.categoryColumn')} value={analysis.categoryKey} />}
         <div className="mt-6 space-y-2">
-          {dataset.resourceUrl && (
+          {(dataset.resourceUrl || dataset.storageUrl || data?.meta?.url) && (
             <a
-              href={isAuthenticated ? dataset.resourceUrl : undefined}
-              onClick={(e) => {
+  href={isAuthenticated ? (dataset.resourceUrl || dataset.storageUrl || data?.meta?.url) : undefined} 
+                onClick={(e) => {
                 if (!isAuthenticated) { e.preventDefault(); openAuthModal('signin'); }
               }}
               target={isAuthenticated ? '_blank' : undefined}
@@ -584,7 +611,7 @@ const DatasetDetailPage = () => {
               {t('info.download')}
             </a>
           )}
-          <a href={dataset.metadataUrl} target="_blank" rel="noreferrer"
+          <a href={dataset.metadataUrl || undefined} target="_blank" rel="noreferrer"
             className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-bg-card border border-border text-gray-400 hover:text-accent-cyan text-xs font-medium">
             <ExternalLink size={12} /> {t('info.apiMetadata')}
           </a>

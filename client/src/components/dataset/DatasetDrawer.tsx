@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { X, Download, ExternalLink, Loader2, AlertCircle } from 'lucide-react';
 import { DatasetSummary, FetchedDataset } from '../../types/dataset';
-import { fetchDatasetByUrl } from '../../services/api';
 import DynamicRenderer from './DynamicRenderer';
-import { useLang } from '../../i18n/LanguageContext';
 import { fetchDatasetContent } from '../../services/api';
+import { useLang } from '../../i18n/LanguageContext';
 
 interface Props {
   dataset: DatasetSummary | null;
@@ -120,13 +119,38 @@ const DatasetDrawer = ({ dataset, onClose }: Props) => {
                 </div>
               )}
 
-              {!loading && !error && data && (
-                <DynamicRenderer
-                  format={data.meta.format}
-                  isGeoJSON={data.meta.isGeoJSON}
-                  data={data.data}
-                />
-              )}
+            {!loading && !error && data && data.meta.format === 'PDF' && data.meta.url && (
+        <div className="w-full h-full flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500">
+                    {t('drawer.pdfPreview') || 'PDF önizləmə'}
+                </span>
+                <a
+                    href={data.meta.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-accent-cyan hover:underline flex items-center gap-1"
+                >
+                    <ExternalLink size={12} />
+                    {t('drawer.openInNewTab') || 'Yeni tabda aç'}
+                </a>
+            </div>
+            <iframe
+                src={data.meta.url}
+                title={dataset.title}
+                className="w-full flex-1 min-h-[600px] rounded-lg border border-border bg-white"
+            />
+        </div>
+    )}
+
+    {/* ✅ Digər formatlar — DynamicRenderer */}
+    {!loading && !error && data && data.meta.format !== 'PDF' && (
+        <DynamicRenderer
+            format={data.meta.format}
+            isGeoJSON={data.meta.isGeoJSON}
+            data={data.data}
+        />
+    )}
             </div>
           </>
         )}

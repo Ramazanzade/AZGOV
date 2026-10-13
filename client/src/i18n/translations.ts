@@ -2,6 +2,8 @@ export type Lang = 'az' | 'ru' | 'en';
 
 export const TRANSLATIONS = {
   az: {
+      'drawer.pdfPreview':'PDF önizləmə',
+    'drawer.openInNewTab':'Yeni tabda aç',
     // ==================== NAVIGATION ====================
     'nav.home': 'Ana Səhifə',
     'nav.categories': 'MƏLUMAT KATEQORİYALARI',
@@ -293,6 +295,8 @@ export const TRANSLATIONS = {
   },
 
   ru: {
+      'drawer.pdfPreview':'PDF önizləmə',
+    'drawer.openInNewTab':'Yeni tabda aç',
     // ==================== NAVIGATION ====================
     'nav.home': 'Главная',
     'nav.categories': 'КАТЕГОРИИ ДАННЫХ',
@@ -613,7 +617,9 @@ export const TRANSLATIONS = {
   'profile.fields.language': 'Language',
   'profile.fields.bio': 'About',
   'profile.fields.bioPlaceholder': 'Short bio...',
-  
+  'drawer.pdfPreview':'PDF önizləmə',
+    'drawer.openInNewTab':'Yeni tabda aç',
+
   'userMenu.profile': 'Profile',
     // ==================== CATEGORIES ====================
     'cat.demographic': 'Demographic and social statistics',
