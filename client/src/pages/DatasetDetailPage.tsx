@@ -215,7 +215,48 @@ useEffect(() => {
       cols.categorical.find(k => !/unit|measure|vahid|title/i.test(k)) || cols.categorical[0];
     const timeKey = cols.dates[0];
     const stats = computeStats(rows, numericKey);
+    // ✅ Numerik sütun yoxdursa → kateqoriyaları sayaraq qrafik qur
+    if (!numericKey && cols.categorical.length > 0) {
+      const countKey =
+        cols.categorical.find(k => !/kod|id|sıra|nömrə|nomre|№/i.test(k)) ||
+        cols.categorical[0];
 
+      const counts = new Map<string, number>();
+      rows.forEach((r: any) => {
+        const k = String(r[countKey] ?? '—').trim().slice(0, 40) || '—';
+        counts.set(k, (counts.get(k) || 0) + 1);
+      });
+
+      const barData = Array.from(counts.entries())
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 10);
+
+      const pieData = barData.slice(0, 6);
+
+      const countStats = {
+        sum: rows.length,
+        avg: counts.size ? rows.length / counts.size : 0,
+        max: barData[0]?.value || 0,
+        min: barData[barData.length - 1]?.value || 0,
+        count: rows.length,
+      };
+
+      return {
+        cols,
+        numericKey: 'Rekord sayı',
+        categoryKey: countKey,
+        timeKey: null,
+        stats: countStats,
+        lineData: [],
+        barData,
+        pieData,
+        totalRows: rows.length,
+        multiSeries: null,
+        geoPoints: null,
+        isCountMode: true,
+      };
+    }
     let lineData: any[] = [];
     if (timeKey && numericKey) {
       const m = new Map<string, number>();
