@@ -43,9 +43,36 @@ const MAX_ROWS = 1000;
 function parseCsv(buf: Buffer) {
     return parse(buf, { columns: true, skip_empty_lines: true });
 }
+// XML-də ən dərin massivi tapır
+function findFirstArray(obj: any, depth = 0): any[] | null {
+    if (depth > 8 || !obj || typeof obj !== 'object') return null;
+    if (Array.isArray(obj) && obj.length > 0) return obj;
+    for (const key of Object.keys(obj)) {
+        const found = findFirstArray(obj[key], depth + 1);
+        if (found && found.length > 0) return found;
+    }
+    return null;
+}
 
+// XML sütun adlarındaki _x0020_ və s.-ni təmizləyir
+function cleanXmlKeys(rows: any[]): any[] {
+    if (!Array.isArray(rows)) return rows;
+    return rows.map((row) => {
+        if (!row || typeof row !== 'object') return row;
+        const clean: Record<string, any> = {};
+        for (const [k, v] of Object.entries(row)) {
+            const cleanKey = k
+                .replace(/_x0020_/g, ' ')
+                .replace(/_x[\dA-Fa-f]{4}_/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+            clean[cleanKey || k] = v;
+        }
+        return clean;
+    });
+}
 function parseExcel(buf: Buffer) {
-      const wb = XLSX.read(buf, { type: 'buffer' });
+    const wb = XLSX.read(buf, { type: 'buffer' });
     const sheet = wb.Sheets[wb.SheetNames[0]];
     const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
 
@@ -53,26 +80,41 @@ function parseExcel(buf: Buffer) {
         return XLSX.utils.sheet_to_json(sheet);
     }
 
-    // İlk sətri başlıq kimi götür
-    let headers: string[] = rows[0].map((h: any, i: number) => {
+    // 1) Başlıq sətrini avtomatik tap
+    // Şərt: ən az 2 dolu hücrə + növbəti sətirdə də eyni mövqelərdə data var
+    let headerIdx = 0;
+    for (let i = 0; i < Math.min(rows.length, 20); i++) {
+        const row = rows[i];
+        const nonEmpty = row.filter(c => c !== '' && c !== null && c !== undefined).length;
+        if (nonEmpty < 2) continue;
+        const next = rows[i + 1];
+        if (!next) continue;
+        let matchCount = 0;
+        for (let j = 0; j < row.length; j++) {
+            if (row[j] !== '' && next[j] !== undefined && next[j] !== '') matchCount++;
+        }
+        if (matchCount >= Math.max(2, Math.floor(nonEmpty * 0.4))) {
+            headerIdx = i;
+            break;
+        }
+    }
+
+    // 2) "EMPTY N" başlıqları varsa, bir sətir aşağı düş
+    let headers: string[] = rows[headerIdx].map((h: any, i: number) => {
         const s = String(h).trim();
         return s || `Sütun ${i + 1}`;
     });
 
-    // "EMPTY N" başlıqları varsa, ikinci sətrin dəyərləri ilə əvəz et
-    const hasEmpty = headers.some(h => /^EMPTY\s*\d+$/i.test(h));
-    if (hasEmpty && rows[1]) {
-        headers = headers.map((h, i) => {
-            if (/^EMPTY\s*\d+$/i.test(h) && rows[1][i] !== undefined && rows[1][i] !== '') {
-                const candidate = String(rows[1][i]).trim();
-                // Yalnız il və ya qısa mətn olarsa istifadə et
-                if (candidate.length <= 30) return candidate;
-            }
-            return h;
+    const emptyCount = headers.filter(h => /^EMPTY\s*\d+$/i.test(h)).length;
+    if (emptyCount > headers.length / 2 && rows[headerIdx + 1]) {
+        headerIdx += 1;
+        headers = rows[headerIdx].map((h: any, i: number) => {
+            const s = String(h).trim();
+            return s || `Sütun ${i + 1}`;
         });
     }
 
-    // Eyni adlı sütunları unikal et
+    // 3) Eyni adlı sütunları unikal et
     const seen: Record<string, number> = {};
     headers = headers.map(h => {
         if (seen[h] === undefined) { seen[h] = 0; return h; }
@@ -80,8 +122,8 @@ function parseExcel(buf: Buffer) {
         return `${h}_${seen[h]}`;
     });
 
-    // İlk 2 sətri başlıq kimi götür, qalanı data
-    const dataRows = rows.slice(2).filter(r =>
+    // 4) Data — başlıqdan sonraki bütün sətirlər
+    const dataRows = rows.slice(headerIdx + 1).filter(r =>
         r.some(c => c !== '' && c !== null && c !== undefined)
     );
 
@@ -271,22 +313,15 @@ if (!storage_url && original_url) {
     // XML xarici faylları server tərəfdə çəkib JSON-a çeviririk
     if (fmtUpper === 'XML') {
         try {
-            const r = await fetch(original_url);
+              const r = await fetch(original_url);
             if (!r.ok) throw new Error(`HTTP ${r.status}`);
             const xml = await r.text();
             const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' });
             const json = parser.parse(xml);
-            if (json && typeof json === 'object') {
-                const arrayField = Object.values(json).find((v) => Array.isArray(v));
-                if (arrayField) {
-                    res.json(arrayField);
-                    return;
-                }
-            }
-            
-
-            res.json(json);
+            const arr = findFirstArray(json);
+            res.json(cleanXmlKeys(arr || [json]));
             return;
+        
         } catch (e) {
             console.error('Xarici XML fetch xətası:', e);
         }
@@ -461,7 +496,14 @@ if (!storage_url && original_url) {
                 case 'CSV':
                     res.json(parseCsv(buffer));
                     return;
-
+               case 'XML': {
+                    const xmlText = buffer.toString('utf-8');
+                    const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' });
+                    const parsed = parser.parse(xmlText);
+                    const arr = findFirstArray(parsed);
+                    res.json(cleanXmlKeys(arr || [parsed]));
+                    return;
+                }
                 case 'XLS':
                 case 'XLSX':
                     res.json(parseExcel(buffer));
