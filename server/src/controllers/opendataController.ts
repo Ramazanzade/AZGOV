@@ -197,11 +197,43 @@ private static guessGroup(categoryPath: string | null): string {
                 return;
             }
 
-            const { storage_url, format } = dataset.rows[0];
-            if (!storage_url || !format) {
-                res.status(404).json({ error: 'Fayl yoxdur' });
-                return;
-            }
+          const { storage_url, format, original_url, title, resource_name } = dataset.rows[0];
+
+// ✅ FALLBACK: S3-də fayl yoxdursa, xarici URL-ə yönləndir
+if (!storage_url && original_url) {
+    console.log(`🔗 Xarici URL fetch edilir: ${original_url}`);
+    const fmtUpper = String(format || '').toUpperCase();
+
+    // JSON xarici faylları server tərəfdə çəkib qaytarırıq
+    if (fmtUpper === 'JSON' || fmtUpper === 'GEOJSON') {
+        try {
+            const r = await fetch(original_url);
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            const json = await r.json();
+            if (json && typeof json === 'object' && !Array.isArray(json)) {
+    const arrayField = Object.values(json).find((v) => Array.isArray(v));
+    if (arrayField) {
+        res.json(arrayField);
+        return;
+    }
+}
+            res.json(json);
+            return;
+        } catch (e) {
+            console.error('Xarici JSON fetch xətası:', e);
+            // alınmasa, aşağıdaki EXTERNAL blokuna düşür
+        }
+    }
+
+    // JSON olmayan və ya fetch alınmayan hallar üçün xarici link
+    res.json({
+        type: 'EXTERNAL',
+        url: original_url,
+        format: format || 'EXTERNAL',
+        title: resource_name || title,
+    });
+    return;
+}
 
             const parts = String(storage_url).replace('s3://', '').split('/');
             const bucket = parts[0];
@@ -215,6 +247,11 @@ private static guessGroup(categoryPath: string | null): string {
                 res.json({ type: 'PDF', url });
                 return;
             }
+            if (fmt === 'XLS' || fmt === 'XLSX') {
+  const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+  res.json({ type: 'DOWNLOAD', url, format: fmt });
+  return;
+}
 
             const response = await s3.send(command);
             if (!response.Body) {

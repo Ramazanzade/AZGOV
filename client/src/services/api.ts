@@ -100,6 +100,30 @@ export const fetchDatasetContent = async (id: number): Promise<FetchedDataset> =
             data: null,
         };
     }
+    // ✅ Xarici URL (EXTERNAL)
+if (payload && payload.type === 'EXTERNAL') {
+    return {
+        meta: {
+            format: payload.format || 'JSON',
+            isGeoJSON: false,
+            totalRecords: 0,
+            url: payload.url,
+            fileName: payload.title,
+        },
+        data: null,
+    };
+}
+    if (payload && payload.type === 'DOWNLOAD') {
+    return {
+      meta: {
+        format: payload.format || 'XLSX',
+        isGeoJSON: false,
+        totalRecords: 0,
+        url: payload.url,
+      },
+      data: null,
+    };
+  }
 
     const isGeoJSON = payload &&
         typeof payload === 'object' &&
