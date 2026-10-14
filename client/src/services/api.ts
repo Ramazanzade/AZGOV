@@ -100,6 +100,18 @@ export const fetchDatasetContent = async (id: number): Promise<FetchedDataset> =
             data: null,
         };
     }
+     if (payload && payload.type === 'EXTERNAL') {
+        return {
+            meta: {
+                format: 'EXTERNAL',
+                isGeoJSON: false,
+                totalRecords: 0,
+                url: payload.url,
+                fileName: payload.title,
+            },
+            data: null,
+        };
+    }
 
     const isGeoJSON = payload &&
         typeof payload === 'object' &&
