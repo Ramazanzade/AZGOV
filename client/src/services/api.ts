@@ -113,6 +113,29 @@ if (payload && payload.type === 'EXTERNAL') {
         data: null,
     };
 }
+    // ✅ GeoJSON FeatureCollection (birbaşa cavab)
+    if (payload && payload.type === 'FeatureCollection' && Array.isArray(payload.features)) {
+        return {
+            meta: {
+                format: 'GeoJSON',
+                isGeoJSON: true,
+                totalRecords: payload.features.length,
+            },
+            data: payload,
+        };
+    }
+
+    // ✅ GeoJSON Feature (tək)
+    if (payload && payload.type === 'Feature') {
+        return {
+            meta: {
+                format: 'GeoJSON',
+                isGeoJSON: true,
+                totalRecords: 1,
+            },
+            data: { type: 'FeatureCollection', features: [payload] },
+        };
+    }
     if (payload && payload.type === 'DOWNLOAD') {
     return {
       meta: {

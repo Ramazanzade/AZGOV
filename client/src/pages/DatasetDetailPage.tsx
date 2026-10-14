@@ -684,16 +684,6 @@ useEffect(() => {
               </div>
             )}
 
-            {/* GeoJSON map */}
-            {fixedData?.meta.isGeoJSON && (
-              <div className="rounded-xl bg-bg-card border border-border p-4 mb-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <MapPin size={14} className="text-accent-cyan" />
-                  <h3 className="text-sm font-semibold">{t('detail.map')}</h3>
-                </div>
-                <MapRenderer data={fixedData.data} />
-              </div>
-            )}
 
             {/* Table */}
             <div
@@ -718,6 +708,21 @@ useEffect(() => {
             </div>
           </>
         )}
+{/* ✅ GeoJSON xəritə — analysis-dən kənar, ayrı */}
+{!loading && !error && fixedData?.meta?.isGeoJSON && fixedData.data?.features?.length > 0 && (
+  <div className="rounded-xl bg-bg-card border border-border p-4 mb-5">
+    <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center gap-2">
+        <MapPin size={14} className="text-accent-cyan" />
+        <h3 className="text-sm font-semibold">{t('detail.map')}</h3>
+      </div>
+      <span className="text-[10px] text-gray-500">
+        {fixedData.data.features.length} obyekt
+      </span>
+    </div>
+    <MapRenderer data={fixedData.data} />
+  </div>
+)}
 
        {!loading && !error && fixedData && !analysis && fixedData?.meta?.format !== 'PDF' && (
   <div className="rounded-xl bg-bg-card border border-border p-6">

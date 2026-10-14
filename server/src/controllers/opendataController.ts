@@ -261,6 +261,97 @@ if (!storage_url && original_url) {
             console.error('Xarici CSV fetch xətası:', e);
         }
     }
+        // KMZ/KML → GeoJSON FeatureCollection
+     // KMZ/KML → GeoJSON (regex ilə, böyük fayllar üçün)
+    if (fmtUpper === 'KMZ' || fmtUpper === 'KML') {
+        try {
+            const r = await fetch(original_url);
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            const buf = Buffer.from(await r.arrayBuffer());
+
+            let kmlText: string;
+            if (fmtUpper === 'KMZ') {
+                const zip = new AdmZip(buf);
+                const kmlEntry = zip.getEntries().find(e => e.entryName.toLowerCase().endsWith('.kml'));
+                if (!kmlEntry) throw new Error('KMZ içində KML tapılmadı');
+                kmlText = kmlEntry.getData().toString('utf-8');
+            } else {
+                kmlText = buf.toString('utf-8');
+            }
+
+            const features: any[] = [];
+
+            // Hər <Placemark>...</Placemark> blokunu ayrıca tap
+            const placemarkRe = /<Placemark\b[^>]*>([\s\S]*?)<\/Placemark>/g;
+            let pmMatch: RegExpExecArray | null;
+
+            while ((pmMatch = placemarkRe.exec(kmlText)) !== null) {
+                const block = pmMatch[1];
+
+                // name
+                const nameMatch = block.match(/<name>([\s\S]*?)<\/name>/);
+                const name = nameMatch ? nameMatch[1].trim() : '—';
+
+                // LineString koordinatları
+                const lineMatch = block.match(/<LineString\b[^>]*>[\s\S]*?<coordinates>([\s\S]*?)<\/coordinates>/);
+                if (lineMatch) {
+                    const coords = lineMatch[1].trim().split(/\s+/)
+                        .map(pair => {
+                            const p = pair.split(',');
+                            return [Number(p[0]), Number(p[1])];
+                        })
+                        .filter(c => !isNaN(c[0]) && !isNaN(c[1]));
+                    if (coords.length > 1) {
+                        features.push({
+                            type: 'Feature',
+                            properties: { name },
+                            geometry: { type: 'LineString', coordinates: coords },
+                        });
+                    }
+                    continue;
+                }
+
+                // Point koordinatları
+                const pointMatch = block.match(/<Point\b[^>]*>[\s\S]*?<coordinates>([\s\S]*?)<\/coordinates>/);
+                if (pointMatch) {
+                    const p = pointMatch[1].trim().split(',');
+                    const lon = Number(p[0]), lat = Number(p[1]);
+                    if (!isNaN(lon) && !isNaN(lat)) {
+                        features.push({
+                            type: 'Feature',
+                            properties: { name },
+                            geometry: { type: 'Point', coordinates: [lon, lat] },
+                        });
+                    }
+                    continue;
+                }
+
+                // Polygon koordinatları
+                const polyMatch = block.match(/<Polygon\b[^>]*>[\s\S]*?<outerBoundaryIs>[\s\S]*?<coordinates>([\s\S]*?)<\/coordinates>/);
+                if (polyMatch) {
+                    const coords = polyMatch[1].trim().split(/\s+/)
+                        .map(pair => {
+                            const p = pair.split(',');
+                            return [Number(p[0]), Number(p[1])];
+                        })
+                        .filter(c => !isNaN(c[0]) && !isNaN(c[1]));
+                    if (coords.length > 2) {
+                        features.push({
+                            type: 'Feature',
+                            properties: { name },
+                            geometry: { type: 'Polygon', coordinates: [coords] },
+                        });
+                    }
+                }
+            }
+
+            console.log(`✅ KMZ parse: ${features.length} feature tapıldı`);
+            res.json({ type: 'FeatureCollection', features });
+            return;
+        } catch (e) {
+            console.error('KMZ/KML fetch xətası:', e);
+        }
+    }
     // JSON olmayan və ya fetch alınmayan hallar üçün xarici link
     res.json({
         type: 'EXTERNAL',
