@@ -724,7 +724,7 @@ useEffect(() => {
   </div>
 )}
 
-       {!loading && !error && fixedData && !analysis && fixedData?.meta?.format !== 'PDF' && (
+       {!loading && !error && fixedData && !analysis && !fixedData?.meta?.isGeoJSON && fixedData?.meta?.format !== 'PDF' && (
   <div className="rounded-xl bg-bg-card border border-border p-6">
     <TableRenderer data={Array.isArray(fixedData.data) ? fixedData.data : []} />
   </div>

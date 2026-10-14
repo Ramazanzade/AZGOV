@@ -136,6 +136,22 @@ if (payload && payload.type === 'EXTERNAL') {
             data: { type: 'FeatureCollection', features: [payload] },
         };
     }
+        // ✅ Array of Features (GeoJSON massivi)
+    if (
+        Array.isArray(payload) &&
+        payload.length > 0 &&
+        payload[0]?.type === 'Feature' &&
+        payload[0]?.geometry
+    ) {
+        return {
+            meta: {
+                format: 'GeoJSON',
+                isGeoJSON: true,
+                totalRecords: payload.length,
+            },
+            data: { type: 'FeatureCollection', features: payload },
+        };
+    }
     if (payload && payload.type === 'DOWNLOAD') {
     return {
       meta: {
