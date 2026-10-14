@@ -7,7 +7,7 @@ import { parse } from 'csv-parse/sync';
 import * as XLSX from 'xlsx';
 import AdmZip from 'adm-zip';
 import { XMLParser } from 'fast-xml-parser';
-
+import { HeadObjectCommand } from '@aws-sdk/client-s3';
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 const accessKey = process.env.NEON_STORAGE_ACCESS_KEY || process.env.AWS_ACCESS_KEY_ID;
@@ -45,8 +45,51 @@ function parseCsv(buf: Buffer) {
 }
 
 function parseExcel(buf: Buffer) {
-    const wb = XLSX.read(buf, { type: 'buffer' });
-    return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+      const wb = XLSX.read(buf, { type: 'buffer' });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+    if (rows.length < 2) {
+        return XLSX.utils.sheet_to_json(sheet);
+    }
+
+    // İlk sətri başlıq kimi götür
+    let headers: string[] = rows[0].map((h: any, i: number) => {
+        const s = String(h).trim();
+        return s || `Sütun ${i + 1}`;
+    });
+
+    // "EMPTY N" başlıqları varsa, ikinci sətrin dəyərləri ilə əvəz et
+    const hasEmpty = headers.some(h => /^EMPTY\s*\d+$/i.test(h));
+    if (hasEmpty && rows[1]) {
+        headers = headers.map((h, i) => {
+            if (/^EMPTY\s*\d+$/i.test(h) && rows[1][i] !== undefined && rows[1][i] !== '') {
+                const candidate = String(rows[1][i]).trim();
+                // Yalnız il və ya qısa mətn olarsa istifadə et
+                if (candidate.length <= 30) return candidate;
+            }
+            return h;
+        });
+    }
+
+    // Eyni adlı sütunları unikal et
+    const seen: Record<string, number> = {};
+    headers = headers.map(h => {
+        if (seen[h] === undefined) { seen[h] = 0; return h; }
+        seen[h]++;
+        return `${h}_${seen[h]}`;
+    });
+
+    // İlk 2 sətri başlıq kimi götür, qalanı data
+    const dataRows = rows.slice(2).filter(r =>
+        r.some(c => c !== '' && c !== null && c !== undefined)
+    );
+
+    return dataRows.map(row => {
+        const obj: Record<string, any> = {};
+        headers.forEach((h, i) => { obj[h] = row[i] ?? ''; });
+        return obj;
+    });
 }
 
 export class OpendataController {
@@ -375,9 +418,32 @@ if (!storage_url && original_url) {
                 return;
             }
             if (fmt === 'XLS' || fmt === 'XLSX') {
-  const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
-  res.json({ type: 'DOWNLOAD', url, format: fmt });
-  return;
+    const head = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+                const size = head.ContentLength || 0;
+
+                // 5 MB-dan böyükdürsə → presigned URL qaytar
+                if (size > 5 * 1024 * 1024) {
+                    const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+                    res.json({ type: 'DOWNLOAD', url, format: fmt });
+                    return;
+                }
+
+                // Kiçikdirsə → parse edib cədvəl kimi qaytar
+                const response = await s3.send(command);
+                if (!response.Body) {
+                    res.status(404).json({ error: 'Fayl boşdur' });
+                    return;
+                }
+                const buffer = Buffer.from(await response.Body.transformToByteArray());
+                try {
+                    const data = parseExcel(buffer);
+                    res.json(data);
+                } catch (parseErr) {
+                    console.error('XLS parse xətası, presigned URL qaytarılır:', parseErr);
+                    const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+                    res.json({ type: 'DOWNLOAD', url, format: fmt });
+                }
+                return;
 }
 
             const response = await s3.send(command);

@@ -446,7 +446,24 @@ useEffect(() => {
         </a>
     </div>
 )}
-
+{!loading && !error && fixedData?.meta?.format === 'XLSX' && fixedData.meta.url && (
+  <div className="rounded-xl bg-bg-card border border-border p-8 text-center">
+    <FileText size={48} className="mx-auto text-accent-cyan mb-4" />
+    <h3 className="text-lg font-semibold mb-2">Excel faylı</h3>
+    <p className="text-sm text-gray-400 mb-4">
+      Bu fayl böyükdür. Yükləmək üçün aşağıdaki düyməyə klikləyin.
+    </p>
+    <a
+      href={fixedData.meta.url}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-cyan/10 border border-accent-cyan/30 text-accent-cyan hover:bg-accent-cyan/20"
+    >
+      <Download size={16} />
+      Faylı yüklə
+    </a>
+  </div>
+)}
         {!loading && !error && analysis && (
           <>
             {/* Stat cards & Aggregation controls */}
