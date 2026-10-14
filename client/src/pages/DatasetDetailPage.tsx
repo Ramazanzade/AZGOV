@@ -49,6 +49,10 @@ const detectColumns = (data: any[]) => {
 
   keys.forEach(k => {
     if (ID_LIKE_KEYS.test(k.trim())) return;
+     if (/^(19|20)\d{2}$/.test(k.trim())) {
+      dates.push(k);
+      return;
+    }
     let numericHits = 0, dateHits = 0, textHits = 0;
     sample.forEach(row => {
       const raw = String(row[k] ?? '').trim();
@@ -135,8 +139,77 @@ useEffect(() => {
     if (!fixedData || !Array.isArray(fixedData.data) || fixedData.data.length === 0) return null;
     const rows = fixedData.data;
     const cols = detectColumns(rows);
+   
     if (!cols) return null;
+ const YEAR_COL_RE = /^(19|20)\d{2}$/;
 
+        // ✅ Geniş format: illər sütun kimidirsə → uzun formata çevir
+    const yearKeys = cols.keys.filter(k => YEAR_COL_RE.test(k.trim()));
+    if (yearKeys.length >= 3 && cols.categorical.length >= 1) {
+      const catKey = cols.categorical[0];
+      const melted: any[] = [];
+      const seriesSet = new Set<string>();
+      rows.forEach((row: any) => {
+        const cat = String(row[catKey] ?? '—').slice(0, 40);
+        seriesSet.add(cat);
+        yearKeys.forEach(yk => {
+          const raw = String(row[yk] ?? '').replace(/\s/g, '').replace(/,/g, '.');
+          const v = Number(raw);
+          if (!isNaN(v) && raw !== '') {
+            melted.push({ name: yk, category: cat, value: v });
+          }
+        });
+      });
+
+      const allCats = Array.from(seriesSet);
+      const years = yearKeys.sort();
+
+      // MultiSeries formatına uyğunlaşdır
+      const series = allCats.map(cat => ({
+        name: cat,
+        data: years.map(y => {
+          const found = melted.find(m => m.name === y && m.category === cat);
+          return { x: y, y: found ? found.value : 0 };
+        }),
+      }));
+
+      // Line data (cəmi)
+      const totalsByYear = new Map<string, number>();
+      melted.forEach(m => totalsByYear.set(m.name, (totalsByYear.get(m.name) || 0) + m.value));
+      const lineData = years.map(y => ({ name: y, value: totalsByYear.get(y) || 0 }));
+
+      // Bar data (kateqoriya üzrə cəm)
+      const totalsByCat = new Map<string, number>();
+      melted.forEach(m => totalsByCat.set(m.category, (totalsByCat.get(m.category) || 0) + m.value));
+      const barData = Array.from(totalsByCat.entries())
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 10);
+
+      const allValues = melted.map(m => m.value);
+      const stats = allValues.length ? {
+        sum: allValues.reduce((a, b) => a + b, 0),
+        avg: allValues.reduce((a, b) => a + b, 0) / allValues.length,
+        max: Math.max(...allValues),
+        min: Math.min(...allValues),
+        count: allValues.length,
+      } : null;
+
+      return {
+        cols,
+        numericKey: catKey,      // "value" əvəzinə kateqoriya adı
+        categoryKey: catKey,
+        timeKey: 'name',
+        stats,
+        lineData,
+        barData,
+        pieData: barData.slice(0, 6),
+        totalRows: rows.length,
+    multiSeries: buildMultiSeries(melted, 'name', 'category', 'value'),
+        geoPoints: null,
+        isWideFormat: true,
+      };
+    }
     const numericKey = cols.numeric[0];
     const categoryKey =
       cols.categorical.find(k => !/unit|measure|vahid|title/i.test(k)) || cols.categorical[0];

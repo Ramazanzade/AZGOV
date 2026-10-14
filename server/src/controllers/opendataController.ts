@@ -6,6 +6,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { parse } from 'csv-parse/sync';
 import * as XLSX from 'xlsx';
 import AdmZip from 'adm-zip';
+import { XMLParser } from 'fast-xml-parser';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
@@ -224,7 +225,42 @@ if (!storage_url && original_url) {
             // alınmasa, aşağıdaki EXTERNAL blokuna düşür
         }
     }
+    // XML xarici faylları server tərəfdə çəkib JSON-a çeviririk
+    if (fmtUpper === 'XML') {
+        try {
+            const r = await fetch(original_url);
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            const xml = await r.text();
+            const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_' });
+            const json = parser.parse(xml);
+            if (json && typeof json === 'object') {
+                const arrayField = Object.values(json).find((v) => Array.isArray(v));
+                if (arrayField) {
+                    res.json(arrayField);
+                    return;
+                }
+            }
+            
 
+            res.json(json);
+            return;
+        } catch (e) {
+            console.error('Xarici XML fetch xətası:', e);
+        }
+    }
+    // CSV xarici faylları server tərəfdə çəkib parse edirik
+    if (fmtUpper === 'CSV') {
+        try {
+            const r = await fetch(original_url);
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            const text = await r.text();
+            const rows = parseCsv(Buffer.from(text, 'utf-8'));
+            res.json(rows);
+            return;
+        } catch (e) {
+            console.error('Xarici CSV fetch xətası:', e);
+        }
+    }
     // JSON olmayan və ya fetch alınmayan hallar üçün xarici link
     res.json({
         type: 'EXTERNAL',
