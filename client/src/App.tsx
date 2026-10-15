@@ -6,7 +6,7 @@ import CategoryPage from './pages/CategoryPage';
 import DatasetDetailPage from './pages/DatasetDetailPage';
 import UserProfile from './pages/UserProfile';
 import ProtectedRoute from './components/auth/ProtectedRoute';
-
+import BrowsePage from './pages/BrowsePage';
 function App() {
   return (
     <Routes>
@@ -18,6 +18,9 @@ function App() {
         <Route path="/profile" element={<UserProfile />} />
         <Route path="dashboard/:category/:sub" element={<CategoryPage />} />
         <Route path="developer" element={<CategoryPage />} />
+        <Route path="/browse" element={<BrowsePage />} />
+<Route path="/browse/:group" element={<BrowsePage />} />
+<Route path="/browse/:group/:category" element={<BrowsePage />} />
         <Route
           path="dataset/:id"
           element={

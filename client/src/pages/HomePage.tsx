@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { useDatasets } from '../hooks/useDatasets';
 import { useLang } from '../i18n/LanguageContext';
+import { useCategoryTree } from '../hooks/useCategoryTree';
+import { useGroupedNavigation } from '../hooks/useGroupedNavigation';
 
 const CATEGORY_ICONS: Record<string, any> = {
   economy: TrendingUp,
@@ -64,7 +66,18 @@ const CATEGORY_PATHS: Record<string, string> = {
 const HomePage = () => {
   const { datasets, loading } = useDatasets();
 const { t } = useLang();
+const { data, error } = useCategoryTree();
+const { groups, orphans} = useGroupedNavigation();
 
+console.log('=== QRUP STRUKTURU ===');
+groups.forEach(g => {
+  console.log(`📁 ${g.label} (${g.categories.length} kateqoriya)`);
+  g.categories.forEach(c => {
+    console.log(`   ├─ ${c.name}  [${c.children.length} alt]`);
+  });
+});
+console.log('=== YETİM KÖKLƏR (config-də yoxdur) ===', orphans.map(o => o.name));
+console.log('loading:', loading, 'error:', error);
   // Statistika hesablanır
   const stats = useMemo(() => {
     const byFormat: Record<string, number> = {};

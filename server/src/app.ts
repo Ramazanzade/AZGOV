@@ -6,7 +6,7 @@ import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import path from 'path';
 import dashboardRoutes from './routes/dashboardRoutes';
-
+import categoryRoutes from './routes/categoryRoutes';
 const app: Application = express();
 
 // Middleware
@@ -28,6 +28,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 app.use('/api/auth', authRoutes);         // ← YENİ
 app.use('/api/v1/opendataRoutes', opendataRoutes);
+app.use('/api/categories', categoryRoutes);
 app.use('/api/opendataRoutes', opendataRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);

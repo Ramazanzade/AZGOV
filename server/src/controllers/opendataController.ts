@@ -202,21 +202,43 @@ export class OpendataController {
     // Dataset siyahısı
 static async getDatasets(req: Request, res: Response) {
     try {
-        // 1. Əvvəl datanın ümumi sayını öyrən
-        const countRes = await pool.query('SELECT COUNT(*)::int AS total FROM datasets');
-        const total = countRes.rows[0].total;
-
-        // 2. rows parametri — default 5000, maksimum 50000
+        // 1. Query parametrləri
         const requested = parseInt(req.query.rows as string) || 5000;
         const rows = Math.min(requested, 50000);
+        const categoryPath = (req.query.categoryPath as string) || null;
 
-        const result = await pool.query(`
+        // 2. Filtr şərtlərini qur
+        let whereSql = '';
+        const params: any[] = [];
+
+        if (categoryPath) {
+            // Seçilmiş kateqoriyanın özü VƏ alt-kateqoriyaları
+            params.push(categoryPath, `${categoryPath}/%`);
+            whereSql = ` WHERE (c.path = $1 OR c.path LIKE $2) `;
+        }
+
+        // 3. Ümumi say (filtrlə)
+        const countQuery = `
+            SELECT COUNT(*)::int AS total
+            FROM datasets d
+            LEFT JOIN categories c ON d.category_id = c.id
+            ${whereSql}
+        `;
+        const countRes = await pool.query(countQuery, params);
+        const total = countRes.rows[0].total;
+
+        // 4. Əsas sorğu (filtrlə + limit)
+        const limitParamIndex = params.length + 1;
+        const mainQuery = `
             SELECT d.*, c.name AS category_name, c.path AS category_path
             FROM datasets d
             LEFT JOIN categories c ON d.category_id = c.id
+            ${whereSql}
             ORDER BY d.id DESC
-            LIMIT $1
-        `, [rows]);
+            LIMIT $${limitParamIndex}
+        `;
+        const mainParams = [...params, rows];
+        const result = await pool.query(mainQuery, mainParams);
 
         const formatted = result.rows.map((row) => ({
             id: row.id,
@@ -235,7 +257,6 @@ static async getDatasets(req: Request, res: Response) {
             categoryPath: row.category_path,
         }));
 
-        // ✅ Header-də ümumi sayı göndər (frontend istifadə edə bilər)
         res.setHeader('X-Total-Count', total.toString());
         res.json(formatted);
     } catch (error) {
