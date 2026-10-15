@@ -101,7 +101,19 @@ export class OpendataService {
                 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
                 const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
                 return { type: 'PDF', url: signedUrl };
-
+            case 'TXT':
+    // TXT faylı əslində JSON ola bilər (opendata.az tez-tez belə edir),
+    // əvvəl JSON kimi yoxlayırıq, uğursuz olsa sətir-sətir oxuyuruq.
+    const txtRaw = buffer.toString('utf-8').trim();
+    try {
+        return JSON.parse(txtRaw);
+    } catch {
+        // JSON deyilsə → hər sətri obyekt kimi qaytar
+        return txtRaw
+            .split(/\r?\n/)
+            .map((line, i) => ({ line: i + 1, value: line }))
+            .filter(r => r.value.trim() !== '');
+    }
             default:
                 throw new Error(`Dəstəklənməyən format: ${format}`);
         }

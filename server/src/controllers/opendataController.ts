@@ -1,7 +1,7 @@
 import 'dotenv/config';  // ← ƏN İLK SƏTİR
 import { Request, Response } from 'express';
 import { Pool } from 'pg';
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, GetObjectCommand , PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { parse } from 'csv-parse/sync';
 import * as XLSX from 'xlsx';
@@ -430,6 +430,45 @@ if (!storage_url && original_url) {
             console.error('KMZ/KML fetch xətası:', e);
         }
     }
+    // TXT xarici faylları server tərəfdə çəkib parse edirik
+if (fmtUpper === 'TXT') {
+    try {
+        const r = await fetch(original_url);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const text = await r.text();
+        const trimmed = text.trim();
+
+        // Əvvəl JSON kimi yoxla (opendata.az tez-tez .txt içində JSON verir)
+       try {
+    const parsed = JSON.parse(trimmed);
+
+    // Əgər obyekt tək açar altında array saxlayırsa (məs: { "Tibb Müəssisələri": [...] })
+    // → array-i birbaşa qaytar
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        const values = Object.values(parsed);
+        const firstArray = values.find(v => Array.isArray(v));
+        if (firstArray) {
+            res.json(firstArray);
+            return;
+        }
+    }
+
+    res.json(parsed);
+    return;
+} catch {
+            // JSON deyilsə → sətir-sətir obyekt kimi qaytar
+            const lines = trimmed
+                .split(/\r?\n/)
+                .map((line, i) => ({ line: i + 1, value: line.trim() }))
+                .filter(row => row.value !== '');
+            res.json(lines);
+            return;
+        }
+    } catch (e) {
+        console.error('Xarici TXT fetch xətası:', e);
+    }
+}
+
     // JSON olmayan və ya fetch alınmayan hallar üçün xarici link
     res.json({
         type: 'EXTERNAL',
@@ -510,21 +549,53 @@ if (!storage_url && original_url) {
                     return;
 
                 case 'ZIP': {
-                    const zip = new AdmZip(buffer);
-                    const out: Record<string, unknown> = {};
+                      const zip = new AdmZip(buffer);
+    const zipEntries = zip.getEntries();
 
-                    for (const entry of zip.getEntries()) {
-                        if (entry.isDirectory) continue;
-                        const ext = entry.entryName.split('.').pop()?.toUpperCase();
-                        const data = entry.getData();
+    // Xüsusi hal: ZIP içində YALNIZ 1 fayl varsa və o PDF-dirsə
+    // → onu S3-ə müvəqqəti yüklə və PDF kimi qaytar
+    if (zipEntries.length === 1) {
+        const entry = zipEntries[0];
+        const entryExt = entry.entryName.split('.').pop()?.toUpperCase();
+        if (entryExt === 'PDF') {
+            const pdfBuffer = entry.getData();
+            const tmpKey = `temp/zip-extract/${Date.now()}-${entry.entryName}`;
 
-                        if (ext === 'CSV') out[entry.entryName] = parseCsv(data);
-                        else if (ext === 'JSON') out[entry.entryName] = JSON.parse(data.toString('utf-8'));
-                        else if (ext === 'XLS' || ext === 'XLSX') out[entry.entryName] = parseExcel(data);
-                        else out[entry.entryName] = 'Binary fayl (oxunmadı)';
-                    }
-                    res.json(out);
-                    return;
+            await s3.send(new PutObjectCommand({
+                Bucket: bucket,
+                Key: tmpKey,
+                Body: pdfBuffer,
+                ContentType: 'application/pdf',
+            }));
+
+            const url = await getSignedUrl(
+                s3,
+                new GetObjectCommand({ Bucket: bucket, Key: tmpKey }),
+                { expiresIn: 3600 }
+            );
+
+res.json({ type: 'PDF', url });
+return;        }
+    }
+
+    // Çoxlu fayl → köhnə davranış (hər faylı ayrı emal et)
+    const extractedData: any = {};
+    zipEntries.forEach((entry) => {
+        const entryExt = entry.entryName.split('.').pop()?.toUpperCase();
+        const entryBuffer = entry.getData();
+
+        if (entryExt === 'CSV') {
+            extractedData[entry.entryName] = parse(entryBuffer, { columns: true, skip_empty_lines: true });
+        } else if (entryExt === 'JSON') {
+            extractedData[entry.entryName] = JSON.parse(entryBuffer.toString('utf-8'));
+        } else if (['XLS', 'XLSX'].includes(entryExt || '')) {
+            const wb = XLSX.read(entryBuffer, { type: 'buffer' });
+            extractedData[entry.entryName] = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+        } else {
+            extractedData[entry.entryName] = 'Binary fayl (oxunmadı)';
+        }
+    });
+    return extractedData;
                 }
 
                 default:
