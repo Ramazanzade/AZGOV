@@ -69,15 +69,7 @@ const { t } = useLang();
 const { data, error } = useCategoryTree();
 const { groups, orphans} = useGroupedNavigation();
 
-console.log('=== QRUP STRUKTURU ===');
-groups.forEach(g => {
-  console.log(`📁 ${g.label} (${g.categories.length} kateqoriya)`);
-  g.categories.forEach(c => {
-    console.log(`   ├─ ${c.name}  [${c.children.length} alt]`);
-  });
-});
-console.log('=== YETİM KÖKLƏR (config-də yoxdur) ===', orphans.map(o => o.name));
-console.log('loading:', loading, 'error:', error);
+
   // Statistika hesablanır
   const stats = useMemo(() => {
     const byFormat: Record<string, number> = {};

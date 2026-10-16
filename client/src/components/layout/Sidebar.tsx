@@ -66,35 +66,46 @@ const toggleGroup = (id: string) => {
       </div>
 
       {/* Yastı naviqasiya */}
+           {/* Yastı naviqasiya */}
       <nav className="flex-1 overflow-y-auto px-3 pb-4">
-        <div className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold px-3 py-2">
+        {/* Ana səhifə linki */}
+        <NavLink
+          to="/"
+          end
+          className={({ isActive }) =>
+            `flex items-center gap-2 px-3 py-2 rounded-lg text-[14px] font-medium transition-colors mb-2 ${
+              isActive
+                ? 'bg-accent-cyan/10 text-accent-cyan'
+                : 'text-gray-300 hover:bg-bg-hover hover:text-white'
+            }`
+          }
+        >
+          <Home size={16} />
+          Ana səhifə
+        </NavLink>
+
+        <div className="text-[9px] uppercase tracking-wider text-gray-500 font-medium px-3 py-2">
           Məlumat Kateqoriyaları
         </div>
-
-        {filteredGroups.length === 0 && (
-          <div className="text-center text-[11px] text-gray-500 py-8">
-            {t('nav.noResults')}
-          </div>
-        )}
 
       {filteredGroups.map(group => {
   const isOpen = !!openGroups[group.id] || !!query.trim();
   return (
     <div key={group.id} className="mb-1">
       {/* Qrup başlığı — kliklənə bilər */}
-      <button
+          <button
         onClick={() => toggleGroup(group.id)}
-        className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-[11px] uppercase tracking-wider font-semibold transition-colors ${
+        className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 rounded-md text-[12px] font-medium tracking-normal transition-colors ${
           isOpen
-            ? 'text-accent-cyan bg-accent-cyan/5'
-            : 'text-gray-400 hover:text-white hover:bg-bg-hover'
+            ? 'text-accent-cyan'
+            : 'text-gray-300 hover:text-white hover:bg-bg-hover'
         }`}
       >
-        <span className="flex items-center gap-1.5 truncate">
-           {group.label}
+        <span className="truncate">
+          {group.label}
         </span>
         <span
-          className={`text-[9px] transition-transform duration-200 ${
+          className={`text-[9px] text-gray-500 transition-transform duration-200 flex-shrink-0 ${
             isOpen ? 'rotate-90' : ''
           }`}
         >
@@ -116,7 +127,7 @@ const toggleGroup = (id: string) => {
               <NavLink
                 key={cat.id}
                 to={path}
-                className={`block px-2 py-1.5 rounded text-[12px] transition-colors ${
+                className={`block px-2 py-1 rounded text-[10.5px] leading-snug transition-colors ${
                   isActive
                     ? 'bg-accent-cyan/10 text-accent-cyan'
                     : 'text-gray-400 hover:bg-bg-hover hover:text-white'
